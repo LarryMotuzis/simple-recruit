@@ -1,0 +1,2 @@
+ALTER TABLE prospects ADD COLUMN IF NOT EXISTS secondary_position TEXT;
+ALTER TABLE prospects ADD COLUMN IF NOT EXISTS notes TEXT;
