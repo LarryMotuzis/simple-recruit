@@ -29,6 +29,9 @@ export default function Prospects() {
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState('');
+  const [position, setPosition] = useState('');
+  const [heightMin, setHeightMin] = useState('');
+  const [heightMax, setHeightMax] = useState('');
 
   const canEdit = user?.role === 'head_coach' || user?.role === 'assistant';
 
@@ -39,6 +42,9 @@ export default function Prospects() {
       const params = {};
       if (search) params.search = search;
       if (stage) params.stage = stage;
+      if (position) params.position = position;
+      if (heightMin) params.heightMin = heightMin;
+      if (heightMax) params.heightMax = heightMax;
       const { prospects } = await api.listProspects(params);
       setProspects(prospects);
     } catch (err) {
@@ -46,7 +52,7 @@ export default function Prospects() {
     } finally {
       setLoading(false);
     }
-  }, [search, stage]);
+  }, [search, stage, position, heightMin, heightMax]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -114,6 +120,45 @@ export default function Prospects() {
           {Object.entries(STAGE_LABELS).map(([v, l]) => (
             <option key={v} value={v}>{l}</option>
           ))}
+        </select>
+        <select
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+          className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
+        >
+          <option value="">All positions</option>
+          <option value="PG">PG</option>
+          <option value="SG">SG</option>
+          <option value="Combo Guard">Combo Guard</option>
+          <option value="Wing">Wing</option>
+          <option value="Forward">Forward</option>
+          <option value="C">C</option>
+        </select>
+        <select
+          value={heightMin}
+          onChange={(e) => setHeightMin(e.target.value)}
+          className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Min height</option>
+          <option value="66">5'6"</option>
+          <option value="69">5'9"</option>
+          <option value="72">6'0"</option>
+          <option value="75">6'3"</option>
+          <option value="78">6'6"</option>
+          <option value="81">6'9"</option>
+        </select>
+        <select
+          value={heightMax}
+          onChange={(e) => setHeightMax(e.target.value)}
+          className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Max height</option>
+          <option value="69">5'9"</option>
+          <option value="72">6'0"</option>
+          <option value="75">6'3"</option>
+          <option value="78">6'6"</option>
+          <option value="81">6'9"</option>
+          <option value="84">7'0"</option>
         </select>
       </div>
 

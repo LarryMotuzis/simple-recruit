@@ -9,7 +9,7 @@ const STAGES = ['keeping_tabs', 'evaluating', 'offered', 'committed'];
 
 // GET /prospects  — list with search + filters
 router.get('/', requireAuth, async (req, res) => {
-  const { search, position, gradYear, stage, region } = req.query;
+  const { search, position, gradYear, stage, region, heightMin, heightMax } = req.query;
   const clauses = ['is_archived = FALSE'];
   const params = [];
 
@@ -19,7 +19,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
   if (position) {
     params.push(position);
-    clauses.push(`position = $${params.length}`);
+    clauses.push(`(position = $${params.length} OR secondary_position = $${params.length})`);
   }
   if (gradYear) {
     params.push(Number(gradYear));
@@ -32,6 +32,14 @@ router.get('/', requireAuth, async (req, res) => {
   if (region) {
     params.push(region);
     clauses.push(`region = $${params.length}`);
+  }
+  if (heightMin) {
+    params.push(Number(heightMin));
+    clauses.push(`height_inches >= $${params.length}`);
+  }
+  if (heightMax) {
+    params.push(Number(heightMax));
+    clauses.push(`height_inches <= $${params.length}`);
   }
 
   const sql = `SELECT * FROM prospects WHERE ${clauses.join(' AND ')} ORDER BY stage, stage_order`;
