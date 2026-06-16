@@ -153,7 +153,7 @@ export default function MyTeam() {
   const darkPc = `#${Math.round(r0*0.65).toString(16).padStart(2,'0')}${Math.round(g0*0.65).toString(16).padStart(2,'0')}${Math.round(b0*0.65).toString(16).padStart(2,'0')}`;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-white">
 
       {/* ── Team Banner ── */}
       <div className="px-8 py-7" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${darkPc} 100%)` }}>
@@ -188,7 +188,7 @@ export default function MyTeam() {
       </div>
 
       {/* ── Content ── */}
-      <div className="px-8 py-6 space-y-6">
+      <div className="px-8 py-8 space-y-8 max-w-7xl mx-auto">
 
         {error && (
           <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">{error}</p>
@@ -200,11 +200,11 @@ export default function MyTeam() {
           <>
             {/* ── Depth Chart ── */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Depth Chart</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Depth Chart</h2>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
-              <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/10">
+              <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/10">
                 <div className="relative w-full" style={{ paddingBottom: '58%' }}>
                   <CourtSVG settings={settings} />
                   {POSITIONS.map(pos => {
@@ -248,22 +248,22 @@ export default function MyTeam() {
 
             {/* ── Roster ── */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Roster</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Roster</h2>
                 <div className="h-px flex-1 bg-slate-200" />
-                <span className="text-xs text-slate-400 font-medium">{players.length} players</span>
+                <span className="text-xs text-slate-500 font-medium">{players.length} players</span>
               </div>
 
               {players.length === 0 ? (
-                <div className="bg-white border border-slate-200 rounded-2xl py-16 flex flex-col items-center text-center shadow-sm">
-                  <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl py-16 flex flex-col items-center text-center shadow-sm">
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-4">
                     <UserPlus className="w-7 h-7 text-slate-300" />
                   </div>
                   <p className="text-slate-600 font-semibold mb-1">No players yet</p>
                   <p className="text-slate-400 text-sm">Add players manually or import from your prospects.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {players.map(p => (
                     <PlayerCard
                       key={p.id}
@@ -389,64 +389,61 @@ function PlayerCard({ player, canEdit, primaryColor, onEdit, onRemove }) {
   const initials = player.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-start gap-3 hover:shadow-md hover:border-slate-300 transition-all shadow-sm">
-      <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
-        style={{ backgroundColor: primaryColor }}
-      >
-        <span className="text-white text-sm font-bold">{initials}</span>
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md hover:border-slate-300 transition-all shadow-sm">
+      <div className="flex items-start gap-3 mb-3">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <span className="text-white text-xs font-bold">{initials}</span>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          {player.prospect_id ? (
+            <Link to={`/prospects/${player.prospect_id}`} className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block">
+              {player.full_name}
+            </Link>
+          ) : (
+            <p className="text-sm font-bold text-slate-900 truncate">{player.full_name}</p>
+          )}
+          {player.jersey_number && (
+            <p className="text-xs font-mono text-slate-500 mt-0.5">#{player.jersey_number}</p>
+          )}
+        </div>
+
+        {canEdit && (
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={onEdit} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-blue-500 hover:bg-blue-50 transition-colors">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onRemove} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-1">
-          <div className="min-w-0">
-            {player.prospect_id ? (
-              <Link to={`/prospects/${player.prospect_id}`} className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block">
-                {player.full_name}
-              </Link>
-            ) : (
-              <p className="text-sm font-bold text-slate-900 truncate">{player.full_name}</p>
-            )}
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              {player.jersey_number && (
-                <span className="text-xs font-mono text-slate-400">#{player.jersey_number}</span>
-              )}
-              {player.position && (
-                <span className="text-xs font-semibold text-slate-500">{player.position}</span>
-              )}
-              {player.year && (
-                <span className="text-xs text-slate-400">{player.year}</span>
-              )}
-              {player.height_inches && (
-                <span className="text-xs text-slate-400">{fmtHeight(player.height_inches)}</span>
-              )}
-            </div>
-          </div>
-
-          {canEdit && (
-            <div className="flex items-center gap-1 shrink-0">
-              <button onClick={onEdit} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-blue-500 hover:bg-blue-50 transition-colors">
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={onRemove} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+      <div className="space-y-2 text-xs text-slate-500">
+        <div className="flex items-center gap-2">
+          {player.position && <span className="font-semibold text-slate-600">{player.position}</span>}
+          {player.year && <span>{player.year}</span>}
         </div>
+        {player.height_inches && (
+          <p>{fmtHeight(player.height_inches)}</p>
+        )}
+      </div>
 
-        <div className="mt-2">
-          {player.chart_position ? (
-            <span
-              className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: `${primaryColor}18`, color: primaryColor, border: `1px solid ${primaryColor}35` }}
-            >
-              {player.chart_position} · {DEPTH_LABELS[player.depth_order - 1]}
-            </span>
-          ) : (
-            <span className="text-xs text-slate-300">Not in depth chart</span>
-          )}
-        </div>
+      <div className="mt-3 pt-3 border-t border-slate-100">
+        {player.chart_position ? (
+          <span
+            className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor, border: `1px solid ${primaryColor}30` }}
+          >
+            {player.chart_position} · {DEPTH_LABELS[player.depth_order - 1]}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-300 italic">Not in depth chart</span>
+        )}
       </div>
     </div>
   );
@@ -478,7 +475,7 @@ function TeamSettingsModal({ settings, onClose, onSaved }) {
 
   return (
     <Modal title="Team Settings" onClose={onClose}>
-      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
         <Field label="Team Name">
           <input
             autoFocus
@@ -496,7 +493,7 @@ function TeamSettingsModal({ settings, onClose, onSaved }) {
             className={inputCls}
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <Field label="Primary Color">
             <div className="flex items-center gap-2">
               <input
@@ -509,7 +506,7 @@ function TeamSettingsModal({ settings, onClose, onSaved }) {
                 value={form.primaryColor}
                 onChange={e => setForm(f => ({ ...f, primaryColor: e.target.value }))}
                 placeholder="#CC0000"
-                className={`${inputCls} font-mono`}
+                className={`${inputCls} font-mono text-xs`}
               />
             </div>
           </Field>
@@ -525,7 +522,7 @@ function TeamSettingsModal({ settings, onClose, onSaved }) {
                 value={form.secondaryColor}
                 onChange={e => setForm(f => ({ ...f, secondaryColor: e.target.value }))}
                 placeholder="#ffffff"
-                className={`${inputCls} font-mono`}
+                className={`${inputCls} font-mono text-xs`}
               />
             </div>
           </Field>
@@ -533,16 +530,16 @@ function TeamSettingsModal({ settings, onClose, onSaved }) {
 
         {/* Preview swatch */}
         <div
-          className="rounded-xl p-4 flex items-center justify-center font-black text-lg tracking-widest shadow-inner"
+          className="rounded-lg p-4 flex items-center justify-center font-black text-lg tracking-widest shadow-sm border border-slate-200"
           style={{ backgroundColor: form.primaryColor, color: form.secondaryColor }}
         >
           {form.abbreviation || 'TEAM'}
         </div>
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
-        <div className="flex gap-2 pt-1">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
-          <button type="submit" disabled={submitting} className="flex-1 py-2.5 text-white text-sm font-semibold rounded-xl transition-opacity hover:opacity-90 disabled:opacity-60"
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+          <button type="submit" disabled={submitting} className="flex-1 py-2.5 text-white text-sm font-semibold rounded-lg transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ backgroundColor: form.primaryColor }}>
             {submitting ? 'Saving…' : 'Save'}
           </button>
@@ -593,7 +590,7 @@ function EditPlayerModal({ player, onClose, onSaved }) {
 
   return (
     <Modal title="Edit Player" onClose={onClose}>
-      <form onSubmit={handleSubmit} className="p-5 space-y-3">
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
         <Field label="Full Name *">
           <input
             autoFocus
@@ -602,7 +599,7 @@ function EditPlayerModal({ player, onClose, onSaved }) {
             className={inputCls}
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <Field label="Position">
             <select value={form.position} onChange={e => setForm(f => ({ ...f, position: e.target.value }))} className={inputCls}>
               <option value="">—</option>
@@ -619,16 +616,16 @@ function EditPlayerModal({ player, onClose, onSaved }) {
             <input value={form.jerseyNumber} onChange={e => setForm(f => ({ ...f, jerseyNumber: e.target.value }))} placeholder="0–99" className={inputCls} />
           </Field>
           <Field label="Height">
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
               <input value={form.heightFt} onChange={e => setForm(f => ({ ...f, heightFt: e.target.value }))} placeholder="Ft" className={inputCls} />
               <input value={form.heightIn} onChange={e => setForm(f => ({ ...f, heightIn: e.target.value }))} placeholder="In" className={inputCls} />
             </div>
           </Field>
         </div>
         {error && <p className="text-red-600 text-sm">{error}</p>}
-        <div className="flex gap-2 pt-1">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
-          <button type="submit" disabled={!form.fullName.trim() || submitting} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors">
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+          <button type="submit" disabled={!form.fullName.trim() || submitting} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
             {submitting ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -681,18 +678,18 @@ function AddPlayerModal({ onClose, onAdded }) {
       <div className="flex border-b border-slate-100">
         {[['manual', 'New Player'], ['prospects', 'From Prospects']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
-            className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${tab === key ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
+            className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${tab === key ? 'text-blue-600 border-blue-600' : 'text-slate-500 hover:text-slate-700 border-transparent'}`}>
             {label}
           </button>
         ))}
       </div>
-      <div className="p-5">
+      <div className="p-6">
         {tab === 'manual' ? (
-          <form onSubmit={handleManualSubmit} className="space-y-3">
+          <form onSubmit={handleManualSubmit} className="space-y-4">
             <Field label="Full Name *">
               <input autoFocus value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Marcus Johnson" className={inputCls} />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <Field label="Position">
                 <select value={form.position} onChange={e => setForm(f => ({ ...f, position: e.target.value }))} className={inputCls}>
                   <option value="">—</option>
@@ -709,7 +706,7 @@ function AddPlayerModal({ onClose, onAdded }) {
                 <input value={form.jerseyNumber} onChange={e => setForm(f => ({ ...f, jerseyNumber: e.target.value }))} placeholder="0–99" className={inputCls} />
               </Field>
               <Field label="Height">
-                <div className="flex gap-1.5">
+                <div className="flex gap-2">
                   <input value={form.heightFt} onChange={e => setForm(f => ({ ...f, heightFt: e.target.value }))} placeholder="Ft" className={inputCls} />
                   <input value={form.heightIn} onChange={e => setForm(f => ({ ...f, heightIn: e.target.value }))} placeholder="In" className={inputCls} />
                 </div>
@@ -717,7 +714,7 @@ function AddPlayerModal({ onClose, onAdded }) {
             </div>
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <button type="submit" disabled={!form.fullName.trim() || submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
               {submitting ? 'Adding…' : 'Add to Roster'}
             </button>
           </form>
@@ -732,8 +729,8 @@ function AddPlayerModal({ onClose, onAdded }) {
               <div className="space-y-1 max-h-64 overflow-y-auto">
                 {filtered.map(p => (
                   <button key={p.id} onClick={() => handleAddProspect(p)} disabled={submitting}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 text-left transition-colors group disabled:opacity-50">
-                    <div className="w-9 h-9 bg-linear-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 text-left transition-colors group disabled:opacity-50">
+                    <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shrink-0 shadow-sm">
                       <span className="text-white text-xs font-bold">{p.full_name[0]}</span>
                     </div>
                     <div className="min-w-0">
@@ -761,7 +758,7 @@ function AssignModal({ position, depthOrder, players, onAssign, onClose }) {
 
   return (
     <Modal title={`${position} · ${DEPTH_LABELS[depthOrder - 1]}`} onClose={onClose}>
-      <div className="p-4">
+      <div className="p-6">
         <input autoFocus placeholder="Search roster…" value={search} onChange={e => setSearch(e.target.value)} className={`${inputCls} mb-3`} />
         {filtered.length === 0 ? (
           <p className="text-slate-400 text-sm text-center py-4">No players available</p>
@@ -769,8 +766,8 @@ function AssignModal({ position, depthOrder, players, onAssign, onClose }) {
           <div className="space-y-1 max-h-60 overflow-y-auto">
             {filtered.map(p => (
               <button key={p.id} onClick={() => onAssign(p.id)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 text-left transition-colors group">
-                <div className="w-9 h-9 bg-linear-to-br from-slate-400 to-slate-600 group-hover:from-blue-400 group-hover:to-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all">
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 text-left transition-colors group">
+                <div className="w-9 h-9 bg-blue-600 group-hover:bg-blue-700 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-all">
                   <span className="text-white text-xs font-bold">{p.jersey_number || p.full_name[0]}</span>
                 </div>
                 <div>
@@ -788,12 +785,12 @@ function AssignModal({ position, depthOrder, players, onAssign, onClose }) {
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
-const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white';
+const inputCls = 'w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white placeholder-slate-400';
 
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{label}</label>
+      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{label}</label>
       {children}
     </div>
   );
@@ -802,14 +799,16 @@ function Field({ label, children }) {
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <h3 className="font-bold text-slate-900 text-lg">{title}</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
-        {children}
+        <div className="overflow-y-auto flex-1">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -821,40 +820,40 @@ function CourtSVG({ settings = DEFAULT_SETTINGS }) {
   const primary = settings.primary_color || '#1e40af';
   const abbrev = settings.abbreviation || 'TEAM';
 
-  // Darken primary for paint gradient bottom
+  // Darken primary for paint gradient
   const r = parseInt(primary.slice(1, 3), 16);
   const g = parseInt(primary.slice(3, 5), 16);
   const b = parseInt(primary.slice(5, 7), 16);
-  const darkR = Math.round(r * 0.7);
-  const darkG = Math.round(g * 0.7);
-  const darkB = Math.round(b * 0.7);
+  const darkR = Math.round(r * 0.6);
+  const darkG = Math.round(g * 0.6);
+  const darkB = Math.round(b * 0.6);
   const darkPrimary = `#${darkR.toString(16).padStart(2,'0')}${darkG.toString(16).padStart(2,'0')}${darkB.toString(16).padStart(2,'0')}`;
 
   return (
     <svg viewBox="0 0 600 348" className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d4863a" />
-          <stop offset="100%" stopColor="#b8692a" />
+          <stop offset="0%" stopColor="#3d3b38" />
+          <stop offset="100%" stopColor="#2a2825" />
         </linearGradient>
         <linearGradient id="paintGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={primary} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={darkPrimary} stopOpacity="0.5" />
+          <stop offset="0%" stopColor={primary} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={darkPrimary} stopOpacity="0.42" />
         </linearGradient>
       </defs>
 
       {/* Floor */}
       <rect width="600" height="348" fill="url(#floorGrad)" />
 
-      {/* Wood grain lines */}
+      {/* Wood grain texture */}
       {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(y => (
-        <line key={y} x1="0" y1={y} x2="600" y2={y} stroke="#c07828" strokeWidth="0.5" strokeOpacity="0.4" />
+        <line key={y} x1="0" y1={y} x2="600" y2={y} stroke="#ffffff" strokeWidth="0.3" strokeOpacity="0.08" />
       ))}
 
       {/* Paint fill */}
       <rect x="203" y="210" width="194" height="128" fill="url(#paintGrad)" />
 
-      <g stroke="#8B4513" strokeWidth="2" fill="none" strokeOpacity="0.9">
+      <g stroke="#6b5d58" strokeWidth="1.8" fill="none" strokeOpacity="0.8">
         {/* Boundary */}
         <rect x="18" y="10" width="564" height="328" rx="2" />
 
@@ -875,10 +874,10 @@ function CourtSVG({ settings = DEFAULT_SETTINGS }) {
         <path d="M 271,338 A 30,30 0 0,1 329,338" />
 
         {/* Backboard */}
-        <line x1="267" y1="332" x2="333" y2="332" strokeWidth="3" />
+        <line x1="267" y1="332" x2="333" y2="332" strokeWidth="2.5" />
 
         {/* Basket */}
-        <circle cx="300" cy="337" r="12" strokeWidth="2.5" />
+        <circle cx="300" cy="337" r="12" strokeWidth="2" />
 
         {/* Center circle at top */}
         <circle cx="300" cy="10" r="36" strokeDasharray="8 6" />
@@ -892,20 +891,17 @@ function CourtSVG({ settings = DEFAULT_SETTINGS }) {
         dominantBaseline="middle"
         fontFamily="system-ui, -apple-system, sans-serif"
         fontWeight="900"
-        fontSize="22"
-        letterSpacing="4"
+        fontSize="24"
+        letterSpacing="5"
         fill={primary}
-        fillOpacity="0.55"
-        stroke={primary}
-        strokeWidth="0.5"
-        strokeOpacity="0.3"
+        fillOpacity="0.7"
         style={{ userSelect: 'none' }}
       >
         {abbrev}
       </text>
 
-      {/* Decorative accent stripe at half court using primary color */}
-      <line x1="18" y1="10" x2="582" y2="10" stroke={primary} strokeWidth="3" strokeOpacity="0.6" />
+      {/* Decorative accent stripe at half court */}
+      <line x1="18" y1="10" x2="582" y2="10" stroke={primary} strokeWidth="2.5" strokeOpacity="0.8" />
     </svg>
   );
 }
