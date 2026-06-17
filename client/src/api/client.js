@@ -90,4 +90,8 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return request(`/audit${qs ? `?${qs}` : ''}`);
   },
+
+  listUsers: () => request('/users'),
+  createUser: (payload) => request('/users', { method: 'POST', body: payload }),
+  updateUserRole: (id, role) => request(`/users/${id}/role`, { method: 'PATCH', body: { role } }),
 };

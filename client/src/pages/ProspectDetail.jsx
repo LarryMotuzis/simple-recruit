@@ -38,7 +38,6 @@ export default function ProspectDetail() {
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   const canEval = user?.role === 'head_coach' || user?.role === 'assistant';
 
   useEffect(() => {
@@ -119,21 +118,23 @@ export default function ProspectDetail() {
 
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 flex-wrap mb-2">
-          <h1 className="text-2xl font-semibold text-slate-900">{prospect.full_name}</h1>
-          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STAGE_BADGE[prospect.stage]}`}>
-            {STAGE_LABELS[prospect.stage]}
-          </span>
-          {prospect.in_portal && (
-            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
-              Portal
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-semibold text-slate-900">{prospect.full_name}</h1>
+            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STAGE_BADGE[prospect.stage]}`}>
+              {STAGE_LABELS[prospect.stage]}
             </span>
-          )}
-          {latestRating !== null && (
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-              Latest: {latestRating}/10
-            </span>
-          )}
+            {prospect.in_portal && (
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
+                Portal
+              </span>
+            )}
+            {latestRating !== null && (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                Latest: {latestRating}/10
+              </span>
+            )}
+          </div>
         </div>
         {metaParts.length > 0 && (
           <p className="text-slate-500 text-sm">{metaParts.join(' · ')}</p>

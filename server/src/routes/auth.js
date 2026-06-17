@@ -60,7 +60,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const result = await query(
-      'SELECT id, email, password_hash, full_name, role FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, full_name, title, role FROM users WHERE email = $1',
       [email]
     );
     const user = result.rows[0];
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
     res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
     return res.json({
       accessToken,
-      user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
+      user: { id: user.id, email: user.email, fullName: user.full_name, title: user.title, role: user.role },
     });
   } catch (err) {
     console.error('login error:', err.message);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
-import { Users, LayoutGrid, LogOut, ArrowRightLeft, Trophy, Plus } from 'lucide-react';
+import { Users, LayoutGrid, LogOut, ArrowRightLeft, Trophy, Plus, ShieldCheck } from 'lucide-react';
 import QuickAddModal from './QuickAddModal.jsx';
 
 const NAV_ITEMS = [
@@ -51,6 +51,12 @@ export default function Layout({ children }) {
               {label}
             </NavLink>
           ))}
+          {user?.role === 'head_coach' && (
+            <NavLink to="/admin/users" className={sideNavCls}>
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              Manage Users
+            </NavLink>
+          )}
         </nav>
 
         <div className="px-4 py-4 border-t border-slate-800">

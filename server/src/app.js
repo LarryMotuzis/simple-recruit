@@ -9,6 +9,7 @@ import auditRoutes from './routes/audit.js';
 import portalRoutes from './routes/portal.js';
 import rosterRoutes from './routes/roster.js';
 import teamSettingsRoutes from './routes/teamSettings.js';
+import userRoutes from './routes/users.js';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/audit', auditRoutes);
 app.use('/portal', portalRoutes);
 app.use('/roster', rosterRoutes);
 app.use('/team-settings', teamSettingsRoutes);
+app.use('/users', userRoutes);
 
 // Fallback 404
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));

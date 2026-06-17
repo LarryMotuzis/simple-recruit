@@ -8,6 +8,7 @@ import Board from './pages/Board.jsx';
 import ProspectDetail from './pages/ProspectDetail.jsx';
 import Portal from './pages/Portal.jsx';
 import MyTeam from './pages/MyTeam.jsx';
+import AdminUsers from './pages/AdminUsers.jsx';
 
 function ProtectedLayout({ children }) {
   return (
@@ -60,6 +61,14 @@ export default function App() {
             element={
               <ProtectedLayout>
                 <MyTeam />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedLayout>
+                <AdminUsers />
               </ProtectedLayout>
             }
           />
