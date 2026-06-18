@@ -3,11 +3,17 @@ import { X, Check } from 'lucide-react';
 import { api } from '../api/client.js';
 
 const POSITIONS = ['PG', 'SG', 'Combo Guard', 'Wing', 'Forward', 'C'];
+const PROSPECT_TYPES = [
+  { value: 'high_school', label: 'HS' },
+  { value: 'transfer', label: 'Transfer' },
+  { value: 'juco', label: 'JUCO' },
+];
 
 export default function QuickAddModal({ onClose }) {
   const [name, setName]       = useState('');
   const [position, setPosition] = useState('');
   const [school, setSchool]   = useState('');
+  const [prospectType, setProspectType] = useState('high_school');
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved]     = useState(false);
   const [error, setError]     = useState('');
@@ -29,6 +35,7 @@ export default function QuickAddModal({ onClose }) {
         fullName: name.trim(),
         position: position || undefined,
         currentSchool: school.trim() || undefined,
+        prospectType,
       });
       setSaved(true);
       setTimeout(onClose, 900);
@@ -70,6 +77,23 @@ export default function QuickAddModal({ onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 pb-6 space-y-4">
+          {/* Type */}
+          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+            {PROSPECT_TYPES.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setProspectType(value)}
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                  prospectType === value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {/* Name — autofocused */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">

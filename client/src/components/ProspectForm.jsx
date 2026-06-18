@@ -3,7 +3,14 @@ import { api } from '../api/client.js';
 
 const POSITIONS = ['PG', 'SG', 'Combo Guard', 'Wing', 'Forward', 'C'];
 
+const PROSPECT_TYPES = [
+  { value: 'high_school', label: 'High School' },
+  { value: 'transfer', label: 'Transfer' },
+  { value: 'juco', label: 'JUCO' },
+];
+
 const blank = {
+  prospectType: 'high_school',
   fullName: '',
   position: '',
   secondaryPosition: '',
@@ -40,6 +47,7 @@ export default function ProspectForm({ onCreated, onError }) {
 
     try {
       const { prospect } = await api.createProspect({
+        prospectType: form.prospectType,
         fullName: form.fullName.trim(),
         position: form.position || undefined,
         secondaryPosition: form.secondaryPosition || undefined,
@@ -48,7 +56,7 @@ export default function ProspectForm({ onCreated, onError }) {
         region: form.region || undefined,
         currentSchool: form.currentSchool || undefined,
         notes: form.notes.trim() || undefined,
-        inPortal: form.inPortal,
+        inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
       setForm(blank);
       onCreated?.(prospect);
@@ -63,6 +71,23 @@ export default function ProspectForm({ onCreated, onError }) {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
       <h3 className="text-base font-semibold text-slate-900 mb-5">New prospect</h3>
       <form onSubmit={handleSubmit}>
+        {/* Type selector */}
+        <div className="flex rounded-lg border border-slate-200 overflow-hidden mb-5">
+          {PROSPECT_TYPES.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, prospectType: value }))}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                form.prospectType === value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 gap-4">
           {/* Name — full width */}
           <div className="col-span-2">
@@ -93,16 +118,18 @@ export default function ProspectForm({ onCreated, onError }) {
             </select>
           </div>
 
-          <div>
-            <label className={labelClass}>HS Grad Year</label>
-            <input
-              type="number"
-              value={form.gradYear}
-              onChange={set('gradYear')}
-              placeholder="2026"
-              className={inputClass}
-            />
-          </div>
+          {form.prospectType === 'high_school' && (
+            <div>
+              <label className={labelClass}>HS Class</label>
+              <select value={form.gradYear} onChange={set('gradYear')} className={inputClass}>
+                <option value="">—</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label className={labelClass}>Height</label>
@@ -135,18 +162,20 @@ export default function ProspectForm({ onCreated, onError }) {
           />
         </div>
 
-        <div className="flex items-center gap-2.5 mt-4">
-          <input
-            id="portal"
-            type="checkbox"
-            checked={form.inPortal}
-            onChange={(e) => setForm((f) => ({ ...f, inPortal: e.target.checked }))}
-            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="portal" className="text-sm text-slate-700 cursor-pointer">
-            In transfer portal
-          </label>
-        </div>
+        {form.prospectType === 'transfer' && (
+          <div className="flex items-center gap-2.5 mt-4">
+            <input
+              id="portal"
+              type="checkbox"
+              checked={form.inPortal}
+              onChange={(e) => setForm((f) => ({ ...f, inPortal: e.target.checked }))}
+              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="portal" className="text-sm text-slate-700 cursor-pointer">
+              In transfer portal
+            </label>
+          </div>
+        )}
 
         <div className="mt-5 flex justify-end">
           <button

@@ -27,11 +27,13 @@ export default function Prospects() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState('');
   const [position, setPosition] = useState('');
   const [heightMin, setHeightMin] = useState('');
   const [heightMax, setHeightMax] = useState('');
+  const [gradYear, setGradYear] = useState('');
 
   const canEdit = user?.role === 'head_coach' || user?.role === 'assistant';
 
@@ -45,6 +47,8 @@ export default function Prospects() {
       if (position) params.position = position;
       if (heightMin) params.heightMin = heightMin;
       if (heightMax) params.heightMax = heightMax;
+      if (activeTab !== 'all') params.prospectType = activeTab;
+      if (activeTab === 'high_school' && gradYear) params.gradYear = gradYear;
       const { prospects } = await api.listProspects(params);
       setProspects(prospects);
     } catch (err) {
@@ -52,7 +56,7 @@ export default function Prospects() {
     } finally {
       setLoading(false);
     }
-  }, [search, stage, position, heightMin, heightMax]);
+  }, [search, stage, position, heightMin, heightMax, activeTab, gradYear]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -100,6 +104,23 @@ export default function Prospects() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5">
+        {[['all', 'All'], ['high_school', 'High School'], ['transfer', 'Transfer'], ['juco', 'JUCO']].map(([val, label]) => (
+          <button
+            key={val}
+            onClick={() => { setActiveTab(val); setGradYear(''); }}
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === val
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-1">
@@ -134,6 +155,19 @@ export default function Prospects() {
           <option value="Forward">Forward</option>
           <option value="C">C</option>
         </select>
+        {activeTab === 'high_school' && (
+          <select
+            value={gradYear}
+            onChange={(e) => setGradYear(e.target.value)}
+            className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-36"
+          >
+            <option value="">All classes</option>
+            <option value="2025">Class of 2025</option>
+            <option value="2026">Class of 2026</option>
+            <option value="2027">Class of 2027</option>
+            <option value="2028">Class of 2028</option>
+          </select>
+        )}
         <select
           value={heightMin}
           onChange={(e) => setHeightMin(e.target.value)}
@@ -222,7 +256,9 @@ export default function Prospects() {
                 <tr className="border-b border-slate-100 bg-slate-50">
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Name</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Pos</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">Grad</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                    {activeTab === 'high_school' ? 'Class' : 'Grad'}
+                  </th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Height</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 hidden md:table-cell">School</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">Status</th>
@@ -241,7 +277,13 @@ export default function Prospects() {
                     <td className="px-4 py-3.5 text-slate-600">
                       {p.position ? (p.secondary_position ? `${p.position} / ${p.secondary_position}` : p.position) : '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-slate-600 hidden lg:table-cell">{p.grad_year || '—'}</td>
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
+                      {p.grad_year
+                        ? activeTab === 'high_school'
+                          ? <span className="inline-flex items-center bg-sky-100 text-sky-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">{p.grad_year}</span>
+                          : <span className="text-slate-600">{p.grad_year}</span>
+                        : <span className="text-slate-300">—</span>}
+                    </td>
                     <td className="px-4 py-3.5 text-slate-600">{formatHeight(p.height_inches)}</td>
                     <td className="px-4 py-3.5 text-slate-600 hidden md:table-cell">{p.current_school || '—'}</td>
                     <td className="px-4 py-3.5 hidden lg:table-cell">

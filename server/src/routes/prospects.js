@@ -9,7 +9,7 @@ const STAGES = ['keeping_tabs', 'evaluating', 'offered', 'committed'];
 
 // GET /prospects  — list with search + filters
 router.get('/', requireAuth, async (req, res) => {
-  const { search, position, gradYear, stage, region, heightMin, heightMax } = req.query;
+  const { search, position, gradYear, stage, region, heightMin, heightMax, prospectType } = req.query;
   const clauses = ['is_archived = FALSE'];
   const params = [];
 
@@ -41,6 +41,10 @@ router.get('/', requireAuth, async (req, res) => {
     params.push(Number(heightMax));
     clauses.push(`height_inches <= $${params.length}`);
   }
+  if (prospectType) {
+    params.push(prospectType);
+    clauses.push(`prospect_type = $${params.length}`);
+  }
 
   const sql = `SELECT * FROM prospects WHERE ${clauses.join(' AND ')} ORDER BY stage, stage_order`;
   try {
@@ -66,15 +70,18 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 // POST /prospects
 router.post('/', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
-  const { fullName, position, secondaryPosition, gradYear, heightInches, region, currentSchool, inPortal, notes } = req.body;
+  const { fullName, position, secondaryPosition, gradYear, heightInches, region, currentSchool, inPortal, notes, prospectType } = req.body;
   if (!fullName) return res.status(400).json({ error: 'fullName is required' });
+
+  const VALID_TYPES = ['high_school', 'transfer', 'juco'];
+  const safeType = VALID_TYPES.includes(prospectType) ? prospectType : 'high_school';
 
   try {
     const result = await query(
-      `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, region, current_school, in_portal, notes, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, region, current_school, in_portal, notes, prospect_type, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, region, currentSchool, inPortal ?? false, notes ?? null, req.user.id]
+      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, region, currentSchool, inPortal ?? false, notes ?? null, safeType, req.user.id]
     );
     const prospect = result.rows[0];
     await recordAudit({
@@ -102,6 +109,7 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
     currentSchool: 'current_school',
     inPortal: 'in_portal',
     notes: 'notes',
+    prospectType: 'prospect_type',
   };
 
   try {
@@ -232,9 +240,14 @@ router.post('/:id/evaluations', requireAuth, requireRole('head_coach', 'assistan
     if (prospectCheck.rows.length === 0) return res.status(404).json({ error: 'Prospect not found' });
 
     const result = await query(
-      `INSERT INTO evaluations (prospect_id, author_id, eval_date, rating, notes, tags)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
+      `WITH inserted AS (
+         INSERT INTO evaluations (prospect_id, author_id, eval_date, rating, notes, tags)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *
+       )
+       SELECT i.*, u.full_name AS author_name
+       FROM inserted i
+       JOIN users u ON u.id = i.author_id`,
       [
         req.params.id,
         req.user.id,
