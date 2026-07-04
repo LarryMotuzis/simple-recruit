@@ -20,7 +20,8 @@ export default function Board() {
   const [editing, setEditing] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
 
-  const canEdit = user?.role === 'head_coach' || user?.role === 'assistant';
+  const canMove = !!user;
+  const canEdit = user?.role === 'admin' || user?.role === 'head_coach' || user?.role === 'assistant';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -109,9 +110,9 @@ export default function Board() {
           return (
             <div
               key={stage.key}
-              onDragOver={canEdit ? (e) => { e.preventDefault(); if (dragOverStage !== stage.key) setDragOverStage(stage.key); } : undefined}
+              onDragOver={canMove ? (e) => { e.preventDefault(); if (dragOverStage !== stage.key) setDragOverStage(stage.key); } : undefined}
               onDragLeave={() => setDragOverStage(null)}
-              onDrop={canEdit ? (e) => handleDrop(e, stage.key) : undefined}
+              onDrop={canMove ? (e) => handleDrop(e, stage.key) : undefined}
               className={[
                 'flex-1 min-w-70 rounded-xl border-2 transition-colors',
                 isOver
@@ -136,7 +137,7 @@ export default function Board() {
                   <ProspectCard
                     key={p.id}
                     prospect={p}
-                    draggable={canEdit}
+                    draggable={canMove}
                     onEdit={canEdit ? () => setEditing(p) : undefined}
                   />
                 ))}

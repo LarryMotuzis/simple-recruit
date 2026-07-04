@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Check, UserPlus } from 'lucide-react';
+import { X, Check, UserPlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { api } from '../api/client.js';
 
@@ -180,6 +180,16 @@ export default function AdminUsers() {
     setUsers(prev => [...prev, newUser].sort((a, b) => a.full_name.localeCompare(b.full_name)));
   };
 
+  const handleDelete = async (userId, fullName) => {
+    if (!confirm(`Delete ${fullName}? This cannot be undone.`)) return;
+    try {
+      await api.deleteUser(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="px-8 py-7 bg-slate-900 flex items-end justify-between">
@@ -237,6 +247,16 @@ export default function AdminUsers() {
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
+
+                  {!isSelf && (
+                    <button
+                      onClick={() => handleDelete(u.id, u.full_name)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                      title="Delete user"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               );
             })}

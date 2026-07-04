@@ -38,7 +38,8 @@ export default function ProspectDetail() {
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const canEval = user?.role === 'head_coach' || user?.role === 'assistant';
+  const canEval = !!user;
+  const canDelete = user?.role === 'admin' || user?.role === 'head_coach';
 
   useEffect(() => {
     async function load() {
@@ -186,7 +187,11 @@ export default function ProspectDetail() {
                     <span className="text-slate-400 font-normal text-sm">/10</span>
                   </span>
                   <span className="text-slate-500 text-xs">{formatDate(ev.eval_date)}</span>
-                  <span className="text-slate-400 text-xs">{ev.author_name}</span>
+                  {ev.author_name && (
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      {ev.author_name}
+                    </span>
+                  )}
                 </div>
 
                 {ev.tags?.length > 0 && (
@@ -211,7 +216,7 @@ export default function ProspectDetail() {
         )}
       </div>
       {/* Danger zone */}
-      {canEval && (
+      {canDelete && (
         <div className="border border-red-100 rounded-xl p-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-700">Remove prospect</p>

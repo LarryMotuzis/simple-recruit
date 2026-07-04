@@ -130,7 +130,7 @@ router.post('/import-csv', requireAuth, requireRole('head_coach', 'assistant'), 
           row.height?.trim() || null,
           row.class?.trim() || null,
           school || null,
-          row.stars ? parseInt(row.stars, 10) || null : null,
+          (() => { const s = parseInt(row.stars, 10); return s >= 0 && s <= 5 ? s : null; })(),
           level,
         ]
       );
@@ -193,14 +193,8 @@ router.post('/:id/import', requireAuth, requireRole('head_coach', 'assistant'), 
       prospect.id, e.id,
     ]);
 
-    await recordAudit({
-      actorId: req.user.id,
-      entityType: 'prospect',
-      entityId: prospect.id,
-      action: 'create',
-      field: 'source',
-      newValue: `portal_import_${e.level}`,
-    });
+    recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: prospect.id, action: 'create', field: 'source', newValue: `portal_import_${e.level}` })
+      .catch(err2 => console.error('audit error:', err2.message));
 
     return res.status(201).json({ prospect });
   } catch (err) {

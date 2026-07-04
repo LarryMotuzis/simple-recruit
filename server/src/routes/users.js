@@ -6,7 +6,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 const router = express.Router();
 
 // GET /users — list all users (head_coach only)
-router.get('/', requireAuth, requireRole('head_coach'), async (req, res) => {
+router.get('/', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const result = await query(
       'SELECT id, email, full_name, role FROM users ORDER BY full_name ASC',
@@ -20,7 +20,7 @@ router.get('/', requireAuth, requireRole('head_coach'), async (req, res) => {
 });
 
 // POST /users — create a new user (head_coach only)
-router.post('/', requireAuth, requireRole('head_coach'), async (req, res) => {
+router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
   const { email, password, fullName, role } = req.body;
   if (!email || !password || !fullName) {
     return res.status(400).json({ error: 'email, password, and fullName are required' });
@@ -52,7 +52,7 @@ router.post('/', requireAuth, requireRole('head_coach'), async (req, res) => {
 });
 
 // PATCH /users/:id/role — update a user's role (head_coach only)
-router.patch('/:id/role', requireAuth, requireRole('head_coach'), async (req, res) => {
+router.patch('/:id/role', requireAuth, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
 
@@ -60,8 +60,8 @@ router.patch('/:id/role', requireAuth, requireRole('head_coach'), async (req, re
     return res.status(400).json({ error: 'Invalid role' });
   }
 
-  // Prevent a head coach from demoting themselves
-  if (Number(id) === req.user.id) {
+  // Prevent admin from demoting themselves
+  if (id === req.user.id) {
     return res.status(400).json({ error: 'Cannot change your own role' });
   }
 
@@ -77,6 +77,26 @@ router.patch('/:id/role', requireAuth, requireRole('head_coach'), async (req, re
   } catch (err) {
     console.error('update role error:', err.message);
     return res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+
+// DELETE /users/:id — remove a user (admin only, cannot delete self)
+router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  const { id } = req.params;
+
+  if (id === req.user.id) {
+    return res.status(400).json({ error: 'Cannot delete your own account' });
+  }
+
+  try {
+    const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    return res.status(204).end();
+  } catch (err) {
+    console.error('delete user error:', err.message);
+    return res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 

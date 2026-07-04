@@ -68,9 +68,9 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /prospects
-router.post('/', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
-  const { fullName, position, secondaryPosition, gradYear, heightInches, region, currentSchool, inPortal, notes, prospectType } = req.body;
+// POST /prospects — all authenticated users can add
+router.post('/', requireAuth, async (req, res) => {
+  const { fullName, position, secondaryPosition, gradYear, heightInches, weightLbs, region, currentSchool, inPortal, notes, prospectType, contactPhone, contactEmail } = req.body;
   if (!fullName) return res.status(400).json({ error: 'fullName is required' });
 
   const VALID_TYPES = ['high_school', 'transfer', 'juco'];
@@ -78,18 +78,14 @@ router.post('/', requireAuth, requireRole('head_coach', 'assistant'), async (req
 
   try {
     const result = await query(
-      `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, region, current_school, in_portal, notes, prospect_type, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, weight_lbs, region, current_school, in_portal, notes, prospect_type, contact_phone, contact_email, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, region, currentSchool, inPortal ?? false, notes ?? null, safeType, req.user.id]
+      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, weightLbs ?? null, region, currentSchool, inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null, req.user.id]
     );
     const prospect = result.rows[0];
-    await recordAudit({
-      actorId: req.user.id,
-      entityType: 'prospect',
-      entityId: prospect.id,
-      action: 'create',
-    });
+    recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: prospect.id, action: 'create' })
+      .catch(e => console.error('audit error:', e.message));
     return res.status(201).json({ prospect });
   } catch (err) {
     console.error('create prospect error:', err.message);
@@ -105,11 +101,14 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
     secondaryPosition: 'secondary_position',
     gradYear: 'grad_year',
     heightInches: 'height_inches',
+    weightLbs: 'weight_lbs',
     region: 'region',
     currentSchool: 'current_school',
     inPortal: 'in_portal',
     notes: 'notes',
     prospectType: 'prospect_type',
+    contactPhone: 'contact_phone',
+    contactEmail: 'contact_email',
   };
 
   try {
@@ -136,13 +135,8 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
     );
 
     for (const change of diffFields(before, after)) {
-      await recordAudit({
-        actorId: req.user.id,
-        entityType: 'prospect',
-        entityId: req.params.id,
-        action: 'update',
-        ...change,
-      });
+      recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: req.params.id, action: 'update', ...change })
+        .catch(e => console.error('audit error:', e.message));
     }
 
     return res.json({ prospect: result.rows[0] });
@@ -152,8 +146,8 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
   }
 });
 
-// PATCH /prospects/:id/stage  — Kanban drag
-router.patch('/:id/stage', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
+// PATCH /prospects/:id/stage  — all authenticated users can move stages
+router.patch('/:id/stage', requireAuth, async (req, res) => {
   const { stage, stageOrder } = req.body;
   if (!STAGES.includes(stage)) {
     return res.status(400).json({ error: `stage must be one of: ${STAGES.join(', ')}` });
@@ -170,15 +164,27 @@ router.patch('/:id/stage', requireAuth, requireRole('head_coach', 'assistant'), 
     );
 
     if (oldStage !== stage) {
-      await recordAudit({
-        actorId: req.user.id,
-        entityType: 'prospect',
-        entityId: req.params.id,
-        action: 'stage_change',
-        field: 'stage',
-        oldValue: oldStage,
-        newValue: stage,
-      });
+      recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: req.params.id, action: 'stage_change', field: 'stage', oldValue: oldStage, newValue: stage })
+        .catch(e => console.error('audit error:', e.message));
+    }
+
+    // Auto-add to the committing user's roster (or their team's roster) when stage becomes committed
+    if (stage === 'committed' && oldStage !== 'committed') {
+      const prospect = result.rows[0];
+      const teamRow = await query('SELECT team_id FROM users WHERE id = $1', [req.user.id]);
+      const teamId = teamRow.rows[0]?.team_id ?? null;
+
+      const alreadyOnRoster = teamId
+        ? await query('SELECT id FROM roster WHERE prospect_id = $1 AND team_id = $2', [prospect.id, teamId])
+        : await query('SELECT id FROM roster WHERE prospect_id = $1 AND user_id = $2', [prospect.id, req.user.id]);
+
+      if (alreadyOnRoster.rows.length === 0) {
+        await query(
+          `INSERT INTO roster (full_name, position, prospect_id, created_by, user_id, team_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [prospect.full_name, prospect.position || null, prospect.id, req.user.id, req.user.id, teamId]
+        );
+      }
     }
 
     return res.json({ prospect: result.rows[0] });
@@ -197,12 +203,8 @@ router.post('/:id/archive', requireAuth, requireRole('head_coach'), async (req, 
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
-    await recordAudit({
-      actorId: req.user.id,
-      entityType: 'prospect',
-      entityId: req.params.id,
-      action: 'archive',
-    });
+    recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: req.params.id, action: 'archive' })
+      .catch(e => console.error('audit error:', e.message));
     return res.status(204).end();
   } catch (err) {
     console.error('archive error:', err.message);
@@ -216,7 +218,7 @@ router.get('/:id/evaluations', requireAuth, async (req, res) => {
     const result = await query(
       `SELECT e.*, u.full_name AS author_name
        FROM evaluations e
-       JOIN users u ON u.id = e.author_id
+       LEFT JOIN users u ON u.id = e.author_id
        WHERE e.prospect_id = $1
        ORDER BY e.eval_date ASC, e.created_at ASC`,
       [req.params.id]
@@ -228,8 +230,8 @@ router.get('/:id/evaluations', requireAuth, async (req, res) => {
   }
 });
 
-// POST /prospects/:id/evaluations
-router.post('/:id/evaluations', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
+// POST /prospects/:id/evaluations — all authenticated users can submit evaluations
+router.post('/:id/evaluations', requireAuth, async (req, res) => {
   const { rating, notes, tags, evalDate } = req.body;
   if (!rating || rating < 1 || rating > 10) {
     return res.status(400).json({ error: 'rating must be 1–10' });

@@ -42,7 +42,7 @@ function buildChart(players) {
 
 export default function MyTeam() {
   const { user } = useAuth();
-  const canEdit = user?.role === 'head_coach' || user?.role === 'assistant';
+  const canEdit = user?.role === 'admin' || user?.role === 'head_coach' || user?.role === 'assistant';
 
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);

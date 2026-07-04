@@ -15,7 +15,7 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const [quickAdd, setQuickAdd] = useState(false);
 
-  const canEdit = user?.role === 'head_coach' || user?.role === 'assistant';
+  const canEdit = user?.role === 'admin' || user?.role === 'head_coach' || user?.role === 'assistant';
 
   const initials = user?.fullName
     ?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -51,7 +51,7 @@ export default function Layout({ children }) {
               {label}
             </NavLink>
           ))}
-          {user?.role === 'head_coach' && (
+          {user?.role === 'admin' && (
             <NavLink to="/admin/users" className={sideNavCls}>
               <ShieldCheck className="w-4 h-4 shrink-0" />
               Manage Users
@@ -95,7 +95,7 @@ export default function Layout({ children }) {
       </nav>
 
       {/* ── Quick-add FAB (mobile only, coaches only) ── */}
-      {canEdit && (
+      {user && (
         <button
           onClick={() => setQuickAdd(true)}
           className="md:hidden fixed bottom-18 right-4 z-50 w-14 h-14 bg-blue-600 active:bg-blue-700 text-white rounded-full shadow-xl flex items-center justify-center"

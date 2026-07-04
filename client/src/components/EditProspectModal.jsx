@@ -24,8 +24,11 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
     gradYear: prospect.grad_year || '',
     heightFeet: prospect.height_inches ? Math.floor(prospect.height_inches / 12) : '',
     heightInches: prospect.height_inches ? prospect.height_inches % 12 : '',
+    weightLbs: prospect.weight_lbs || '',
     region: prospect.region || '',
     currentSchool: prospect.current_school || '',
+    contactPhone: prospect.contact_phone || '',
+    contactEmail: prospect.contact_email || '',
     notes: prospect.notes || '',
     inPortal: prospect.in_portal || false,
   });
@@ -53,8 +56,11 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
         secondaryPosition: form.secondaryPosition || null,
         gradYear: form.prospectType === 'high_school' ? (form.gradYear ? Number(form.gradYear) : null) : null,
         heightInches: totalInches,
+        weightLbs: form.weightLbs ? Number(form.weightLbs) : null,
         region: form.region || null,
         currentSchool: form.currentSchool || null,
+        contactPhone: form.contactPhone.trim() || null,
+        contactEmail: form.contactEmail.trim() || null,
         notes: form.notes.trim() || null,
         inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
@@ -148,6 +154,11 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
             </div>
 
             <div>
+              <label className={labelClass}>Weight (lbs)</label>
+              <input type="number" value={form.weightLbs} onChange={set('weightLbs')} placeholder="185" className={inputClass} />
+            </div>
+
+            <div>
               <label className={labelClass}>Region / State</label>
               <input value={form.region} onChange={set('region')} className={inputClass} />
             </div>
@@ -155,6 +166,16 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
             <div>
               <label className={labelClass}>Current School</label>
               <input value={form.currentSchool} onChange={set('currentSchool')} className={inputClass} />
+            </div>
+
+            <div>
+              <label className={labelClass}>Phone</label>
+              <input type="tel" value={form.contactPhone} onChange={set('contactPhone')} placeholder="(555) 000-0000" className={inputClass} />
+            </div>
+
+            <div>
+              <label className={labelClass}>Email</label>
+              <input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="player@email.com" className={inputClass} />
             </div>
           </div>
 

@@ -35,7 +35,8 @@ export default function Prospects() {
   const [heightMax, setHeightMax] = useState('');
   const [gradYear, setGradYear] = useState('');
 
-  const canEdit = user?.role === 'head_coach' || user?.role === 'assistant';
+  const canAdd  = !!user;
+  const canEdit = user?.role === 'admin' || user?.role === 'head_coach' || user?.role === 'assistant';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,7 +87,7 @@ export default function Prospects() {
             {loading ? '…' : `${prospects.length} prospect${prospects.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        {canEdit && (
+        {canAdd && (
           <button
             onClick={() => setShowForm((s) => !s)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
@@ -98,7 +99,7 @@ export default function Prospects() {
       </div>
 
       {/* Add form */}
-      {showForm && (
+      {showForm && canAdd && (
         <div className="mb-5">
           <ProspectForm onCreated={handleCreated} onError={setError} />
         </div>
@@ -207,7 +208,7 @@ export default function Prospects() {
       ) : prospects.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center py-16 text-slate-400">
           <p className="text-sm">No prospects yet.</p>
-          {canEdit && (
+          {canAdd && (
             <button onClick={() => setShowForm(true)} className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium">
               Add your first prospect →
             </button>

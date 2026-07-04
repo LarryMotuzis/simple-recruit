@@ -22,7 +22,8 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
     if (refreshed) return request(path, { method, body, auth });
   }
 
-  const data = res.status === 204 ? null : await res.json();
+  const isJson = res.headers.get('content-type')?.includes('application/json');
+  const data = res.status === 204 ? null : isJson ? await res.json() : null;
   if (!res.ok) throw new Error(data?.error || `Request failed: ${res.status}`);
   return data;
 }
@@ -94,4 +95,5 @@ export const api = {
   listUsers: () => request('/users'),
   createUser: (payload) => request('/users', { method: 'POST', body: payload }),
   updateUserRole: (id, role) => request(`/users/${id}/role`, { method: 'PATCH', body: { role } }),
+  deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
 };

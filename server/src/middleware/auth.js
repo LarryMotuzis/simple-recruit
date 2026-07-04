@@ -29,7 +29,8 @@ export function requireRole(...allowed) {
     if (!req.user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
-    if (!allowed.includes(req.user.role)) {
+    // admin bypasses all role checks
+    if (req.user.role !== 'admin' && !allowed.includes(req.user.role)) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();

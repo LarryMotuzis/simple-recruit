@@ -17,8 +17,11 @@ const blank = {
   gradYear: '',
   heightFeet: '',
   heightInches: '',
+  weightLbs: '',
   region: '',
   currentSchool: '',
+  contactPhone: '',
+  contactEmail: '',
   notes: '',
   inPortal: false,
 };
@@ -53,8 +56,11 @@ export default function ProspectForm({ onCreated, onError }) {
         secondaryPosition: form.secondaryPosition || undefined,
         gradYear: form.gradYear ? Number(form.gradYear) : undefined,
         heightInches: totalInches,
+        weightLbs: form.weightLbs ? Number(form.weightLbs) : undefined,
         region: form.region || undefined,
         currentSchool: form.currentSchool || undefined,
+        contactPhone: form.contactPhone.trim() || undefined,
+        contactEmail: form.contactEmail.trim() || undefined,
         notes: form.notes.trim() || undefined,
         inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
@@ -140,6 +146,11 @@ export default function ProspectForm({ onCreated, onError }) {
           </div>
 
           <div>
+            <label className={labelClass}>Weight (lbs)</label>
+            <input type="number" value={form.weightLbs} onChange={set('weightLbs')} placeholder="185" className={inputClass} />
+          </div>
+
+          <div>
             <label className={labelClass}>Region / State</label>
             <input value={form.region} onChange={set('region')} placeholder="IL" className={inputClass} />
           </div>
@@ -147,6 +158,16 @@ export default function ProspectForm({ onCreated, onError }) {
           <div>
             <label className={labelClass}>Current School</label>
             <input value={form.currentSchool} onChange={set('currentSchool')} placeholder="Oak Park HS" className={inputClass} />
+          </div>
+
+          <div>
+            <label className={labelClass}>Phone</label>
+            <input type="tel" value={form.contactPhone} onChange={set('contactPhone')} placeholder="(555) 000-0000" className={inputClass} />
+          </div>
+
+          <div>
+            <label className={labelClass}>Email</label>
+            <input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="player@email.com" className={inputClass} />
           </div>
         </div>
 
