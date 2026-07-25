@@ -1,44 +1,44 @@
 import bcrypt from 'bcryptjs';
 import { pool } from './pool.js';
 
-// 2024-25 Duke Blue Devils roster
+// Fictional Riverbend Basketball roster
 const ROSTER = [
-  { fullName: 'Tyrese Proctor',    position: 'PG', jerseyNumber: '5',  year: 'Jr',   heightInches: 77 },
-  { fullName: 'Caleb Foster',      position: 'PG', jerseyNumber: '1',  year: 'Jr',   heightInches: 76 },
-  { fullName: 'Cooper Flagg',      position: 'SF', jerseyNumber: '2',  year: 'Fr',   heightInches: 81 },
-  { fullName: 'Kon Knueppel',      position: 'SG', jerseyNumber: '4',  year: 'Fr',   heightInches: 79 },
-  { fullName: 'Isaiah Evans',      position: 'SG', jerseyNumber: '8',  year: 'Fr',   heightInches: 78 },
-  { fullName: 'Maliq Brown',       position: 'SF', jerseyNumber: '3',  year: 'Jr',   heightInches: 79 },
-  { fullName: 'Mason Gillis',      position: 'PF', jerseyNumber: '10', year: 'Grad', heightInches: 79 },
-  { fullName: 'Sean Stewart',      position: 'PF', jerseyNumber: '33', year: 'So',   heightInches: 81 },
-  { fullName: 'Jarin Stevenson',   position: 'PF', jerseyNumber: '15', year: 'So',   heightInches: 81 },
-  { fullName: 'Patrick Ngongba II',position: 'C',  jerseyNumber: '32', year: 'Jr',   heightInches: 82 },
-  { fullName: 'Khaman Maluach',    position: 'C',  jerseyNumber: '6',  year: 'Fr',   heightInches: 85 },
+  { fullName: 'Jalen Whitmore',   position: 'PG', jerseyNumber: '5',  year: 'Jr',   heightInches: 77 },
+  { fullName: 'Marcus Doyle',     position: 'PG', jerseyNumber: '1',  year: 'Jr',   heightInches: 76 },
+  { fullName: 'Aiden Brooks',     position: 'SF', jerseyNumber: '2',  year: 'Fr',   heightInches: 81 },
+  { fullName: 'Tyler Osei',       position: 'SG', jerseyNumber: '4',  year: 'Fr',   heightInches: 79 },
+  { fullName: 'DeShawn Ellis',    position: 'SG', jerseyNumber: '8',  year: 'Fr',   heightInches: 78 },
+  { fullName: 'Nate Calloway',    position: 'SF', jerseyNumber: '3',  year: 'Jr',   heightInches: 79 },
+  { fullName: 'Colin Reyes',      position: 'PF', jerseyNumber: '10', year: 'Grad', heightInches: 79 },
+  { fullName: 'Xavier Delgado',   position: 'PF', jerseyNumber: '33', year: 'So',   heightInches: 81 },
+  { fullName: 'Isaiah Trent',     position: 'PF', jerseyNumber: '15', year: 'So',   heightInches: 81 },
+  { fullName: 'Owen Baptiste',    position: 'C',  jerseyNumber: '32', year: 'Jr',   heightInches: 82 },
+  { fullName: 'Malik Thornton',   position: 'C',  jerseyNumber: '6',  year: 'Fr',   heightInches: 85 },
 ];
 
 const COACHES = [
   {
-    email: 'scheyer@duke.edu',
-    password: 'BlueDevils1!',
-    fullName: 'Jon Scheyer',
+    email: 'dwhitfield@riverbendu.edu',
+    password: 'RiverbendHoops1!',
+    fullName: 'Derek Whitfield',
     role: 'head_coach',
   },
   {
-    email: 'carrawell@duke.edu',
-    password: 'BlueDevils2!',
-    fullName: 'Chris Carrawell',
+    email: 'mreeves@riverbendu.edu',
+    password: 'RiverbendHoops2!',
+    fullName: 'Malcolm Reeves',
     role: 'assistant',
   },
 ];
 
 const TEAM_SETTINGS = {
-  teamName: 'Duke Blue Devils',
-  abbreviation: 'DUKE',
+  teamName: 'Riverbend Basketball',
+  abbreviation: 'RVB',
   primaryColor: '#003087',
   secondaryColor: '#FFFFFF',
 };
 
-async function seedDuke() {
+async function seedDemoTeam() {
   const createdUsers = [];
 
   for (const c of COACHES) {
@@ -93,10 +93,10 @@ async function seedDuke() {
   }
 
   await pool.end();
-  console.log('\nDuke seed complete.');
+  console.log('\nRiverbend demo team seed complete.');
 }
 
-seedDuke().catch(err => {
+seedDemoTeam().catch(err => {
   console.error('Seed failed:', err.message);
   process.exit(1);
 });

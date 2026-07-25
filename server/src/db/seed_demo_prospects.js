@@ -67,7 +67,7 @@ const PROSPECTS = [
     prospectType: 'high_school',
     stage: 'evaluating',
     stageOrder: 0,
-    notes: 'Had unofficial visit July 12. Great feel for the game. Family is very interested in Duke.',
+    notes: 'Had unofficial visit July 12. Great feel for the game. Family is very interested in Riverbend.',
     contactPhone: '(317) 555-0184',
     contactEmail: 'simmons.family@email.com',
   },
@@ -127,7 +127,7 @@ const PROSPECTS = [
     prospectType: 'high_school',
     stage: 'offered',
     stageOrder: 0,
-    notes: 'Offered Aug 3. 4-star. Smooth scorer, can play 2 through 4. Down to Duke, Kentucky, UNC.',
+    notes: 'Offered Aug 3. 4-star. Smooth scorer, can play 2 through 4. Down to Riverbend, Kentucky, UNC.',
     contactPhone: '(704) 555-0138',
     contactEmail: 'ithomas.recruit@email.com',
   },
@@ -142,7 +142,7 @@ const PROSPECTS = [
     prospectType: 'high_school',
     stage: 'offered',
     stageOrder: 1,
-    notes: 'Offered July 28. Official visit Sep 20. His AAU coach played at Duke — strong relationship.',
+    notes: 'Offered July 28. Official visit Sep 20. His AAU coach played at Riverbend — strong relationship.',
     contactPhone: '(703) 555-0392',
   },
   {
@@ -173,7 +173,7 @@ const PROSPECTS = [
     prospectType: 'high_school',
     stage: 'committed',
     stageOrder: 0,
-    notes: 'Committed Aug 10. 5-star. #3 nationally. Called Coach Scheyer personally to commit. Duke Nation.',
+    notes: 'Committed Aug 10. 5-star. #3 nationally. Called Coach Whitfield personally to commit. Riverbend Nation.',
     contactPhone: '(818) 555-0247',
     contactEmail: 'mitchell.aaron2026@email.com',
   },
@@ -194,38 +194,38 @@ const PROSPECTS = [
 ];
 
 const EVALUATIONS = [
-  { prospectName: 'Trey Simmons',      coachEmail: 'scheyer@duke.edu',    rating: 8, text: 'Watched him at the EYBL session in Atlanta. Pace and poise stands out — never seems rushed. Two live turnovers both came from teammates. Real floor general. I want to see him against elite athletes at Peach Jam before we pull the trigger on an offer.' },
-  { prospectName: 'Trey Simmons',      coachEmail: 'carrawell@duke.edu',  rating: 8, text: 'Caught the second session. His handle under pressure is already college-ready. Needs to add strength. His pull-up mid-range is a weapon. Strong lean toward offer.' },
-  { prospectName: 'Kofi Mensah',       coachEmail: 'scheyer@duke.edu',    rating: 7, text: 'Film review on Sunrise Christian. Motor is elite — never stops competing on the glass. Footwork on the block is raw but coachable. Screened for Sunrise more than I would like but that is a system thing. Think he fits our style at the 4.' },
-  { prospectName: 'DeShawn Okafor',    coachEmail: 'carrawell@duke.edu',  rating: 7, text: 'Spoke with his agent. Looking for a program where he can showcase as a starter. 10/7 off the bench at Kentucky says he can play; questions are around motor and focus. His size is exactly what we need in the post.' },
-  { prospectName: 'Xavier Pope',       coachEmail: 'scheyer@duke.edu',    rating: 8, text: 'Reviewed full Gonzaga season. Shot creation off movement is as good as advertised. Does need the ball in his hands too much at times. Would need to buy in to off-ball role here. Set a Zoom for next week.' },
-  { prospectName: 'Isaiah Thomas Jr.', coachEmail: 'carrawell@duke.edu',  rating: 9, text: 'Official visit went extremely well. His mom loved the academic side. He was locked in during the film session with coaches. Only real competition for us is Kentucky. Need to stay aggressive — I think we get him if we keep the relationship strong.' },
-  { prospectName: 'Aaron Mitchell',    coachEmail: 'scheyer@duke.edu',    rating: 10, text: 'Commitment call was genuine — he was emotional. Family is first-class. Already talking about being here for 2-3 years and winning. This is a cornerstone piece of the 2026 class.' },
-  { prospectName: 'Aaron Mitchell',    coachEmail: 'carrawell@duke.edu',  rating: 10, text: 'Watched him at the Nike EYBL Finals. Shot 6/10 from three against a loaded Nightrydas lineup. His pull-up game is NBA-ready now. We landed a special one.' },
-  { prospectName: 'Darius Kwame',      coachEmail: 'scheyer@duke.edu',    rating: 9, text: 'Caught him at Prolific Prep vs Montverde. He held his own against a top-5 center. Rolls to the rim relentlessly. Will be a load in the ACC immediately.' },
+  { prospectName: 'Trey Simmons',      coachEmail: 'dwhitfield@riverbendu.edu', rating: 8, text: 'Watched him at the EYBL session in Atlanta. Pace and poise stands out — never seems rushed. Two live turnovers both came from teammates. Real floor general. I want to see him against elite athletes at Peach Jam before we pull the trigger on an offer.' },
+  { prospectName: 'Trey Simmons',      coachEmail: 'mreeves@riverbendu.edu',    rating: 8, text: 'Caught the second session. His handle under pressure is already college-ready. Needs to add strength. His pull-up mid-range is a weapon. Strong lean toward offer.' },
+  { prospectName: 'Kofi Mensah',       coachEmail: 'dwhitfield@riverbendu.edu', rating: 7, text: 'Film review on Sunrise Christian. Motor is elite — never stops competing on the glass. Footwork on the block is raw but coachable. Screened for Sunrise more than I would like but that is a system thing. Think he fits our style at the 4.' },
+  { prospectName: 'DeShawn Okafor',    coachEmail: 'mreeves@riverbendu.edu',    rating: 7, text: 'Spoke with his agent. Looking for a program where he can showcase as a starter. 10/7 off the bench at Kentucky says he can play; questions are around motor and focus. His size is exactly what we need in the post.' },
+  { prospectName: 'Xavier Pope',       coachEmail: 'dwhitfield@riverbendu.edu', rating: 8, text: 'Reviewed full Gonzaga season. Shot creation off movement is as good as advertised. Does need the ball in his hands too much at times. Would need to buy in to off-ball role here. Set a Zoom for next week.' },
+  { prospectName: 'Isaiah Thomas Jr.', coachEmail: 'mreeves@riverbendu.edu',    rating: 9, text: 'Official visit went extremely well. His mom loved the academic side. He was locked in during the film session with coaches. Only real competition for us is Kentucky. Need to stay aggressive — I think we get him if we keep the relationship strong.' },
+  { prospectName: 'Aaron Mitchell',    coachEmail: 'dwhitfield@riverbendu.edu', rating: 10, text: 'Commitment call was genuine — he was emotional. Family is first-class. Already talking about being here for 2-3 years and winning. This is a cornerstone piece of the 2026 class.' },
+  { prospectName: 'Aaron Mitchell',    coachEmail: 'mreeves@riverbendu.edu',    rating: 10, text: 'Watched him at the Nike EYBL Finals. Shot 6/10 from three against a loaded Nightrydas lineup. His pull-up game is NBA-ready now. We landed a special one.' },
+  { prospectName: 'Darius Kwame',      coachEmail: 'dwhitfield@riverbendu.edu', rating: 9, text: 'Caught him at Prolific Prep vs Montverde. He held his own against a top-5 center. Rolls to the rim relentlessly. Will be a load in the ACC immediately.' },
 ];
 
-async function seedDukeProspects() {
+async function seedDemoProspects() {
   // Find the head coach to use as created_by
   const coachResult = await pool.query(
     'SELECT id FROM users WHERE email = $1',
-    ['scheyer@duke.edu']
+    ['dwhitfield@riverbendu.edu']
   );
   if (coachResult.rows.length === 0) {
-    console.error('Duke coaches not found — run seed_duke.js first');
+    console.error('Riverbend coaches not found — run seed_demo_team.js first');
     process.exit(1);
   }
   const headCoachId = coachResult.rows[0].id;
 
   const assistantResult = await pool.query(
     'SELECT id FROM users WHERE email = $1',
-    ['carrawell@duke.edu']
+    ['mreeves@riverbendu.edu']
   );
   const assistantId = assistantResult.rows[0].id;
 
   const coachIds = {
-    'scheyer@duke.edu': headCoachId,
-    'carrawell@duke.edu': assistantId,
+    'dwhitfield@riverbendu.edu': headCoachId,
+    'mreeves@riverbendu.edu': assistantId,
   };
 
   // Insert prospects
@@ -263,7 +263,7 @@ async function seedDukeProspects() {
     console.log(`  Prospect: added ${p.fullName} (${p.stage})`);
     added++;
 
-    // Auto-add committed prospects to Duke's roster
+    // Auto-add committed prospects to Riverbend's roster
     if (p.stage === 'committed') {
       const teamResult = await pool.query('SELECT team_id FROM users WHERE id = $1', [headCoachId]);
       const teamId = teamResult.rows[0]?.team_id ?? null;
@@ -299,10 +299,10 @@ async function seedDukeProspects() {
   }
 
   await pool.end();
-  console.log(`\nDuke prospects seed complete. Added: ${added}, skipped: ${skipped}, evaluations: ${evalAdded}`);
+  console.log(`\nRiverbend prospects seed complete. Added: ${added}, skipped: ${skipped}, evaluations: ${evalAdded}`);
 }
 
-seedDukeProspects().catch(err => {
+seedDemoProspects().catch(err => {
   console.error('Seed failed:', err.message);
   process.exit(1);
 });

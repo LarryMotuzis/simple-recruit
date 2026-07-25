@@ -8,14 +8,24 @@ Built as a full-stack application: **React (Vite)** frontend, **Node/Express** A
 
 **[simple-recruit-j1w2.vercel.app](https://simple-recruit-j1w2.vercel.app)**
 
-Log in with the Duke Basketball demo accounts to explore the app:
+> First load can take ~20-30 seconds — the free-tier API spins down when idle and needs a moment to wake up. It's fast after that.
+
+Log in with the Riverbend Basketball demo accounts to explore the app:
 
 | Role | Email | Password |
 |---|---|---|
-| Head Coach | scheyer@duke.edu | BlueDevils1! |
-| Assistant Coach | carrawell@duke.edu | BlueDevils2! |
+| Head Coach | dwhitfield@riverbendu.edu | RiverbendHoops1! |
+| Assistant Coach | mreeves@riverbendu.edu | RiverbendHoops2! |
 
-The demo includes a full 2024-25 Duke roster, 13 recruits across all pipeline stages (Keeping Tabs → Evaluating → Offered → Committed), and coach evaluations on several prospects. Both accounts share the same team board — changes made by one coach are immediately visible to the other.
+The demo includes a full Riverbend roster, 13 recruits across all pipeline stages (Keeping Tabs → Evaluating → Offered → Committed), and coach evaluations on several prospects. Both accounts share the same team board — changes made by one coach are immediately visible to the other. (Riverbend Basketball and its roster are fictional, invented for this demo.)
+
+## Screenshots
+
+![Recruiting board — Kanban pipeline](docs/screenshots/board.png)
+*Recruiting board: prospects move through Keeping Tabs → Evaluating → Offered → Committed.*
+
+![Team roster](docs/screenshots/roster.png)
+*My Team: shared roster across the coaching staff, with depth chart ordering.*
 
 ## What it does
 
@@ -76,10 +86,17 @@ npm run dev              # starts on http://localhost:5173
 ```bash
 cd server
 node src/db/seed.js               # Lewis University staff accounts
-node src/db/seed_duke.js          # Duke coaches + roster
-node src/db/seed_teams.js         # link Duke coaches to shared team
-node src/db/seed_duke_prospects.js # Duke recruiting board + evaluations
+node src/db/seed_demo_team.js       # Riverbend coaches + roster
+node src/db/seed_demo_team_link.js  # link Riverbend coaches to shared team
+node src/db/seed_demo_prospects.js  # Riverbend recruiting board + evaluations
 ```
+
+### 4. Run the tests
+```bash
+cd server && npm test   # unit + Supertest integration tests, needs DATABASE_URL set
+cd client && npm test   # component tests (Vitest)
+```
+CI runs both suites (with a disposable Postgres service) on every push — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ## Why this exists
 
