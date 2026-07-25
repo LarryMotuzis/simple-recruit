@@ -3,14 +3,238 @@ import { query } from '../db/pool.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { recordAudit, diffFields } from '../services/auditService.js';
 import { errorMessage } from '../lib/errors.js';
+import { z } from '../lib/zod.js';
+import { registry } from '../lib/openapi.js';
+import { validate } from '../lib/validate.js';
+import { idParamSchema } from '../lib/commonSchemas.js';
 
 const router = express.Router();
 
-const STAGES = ['keeping_tabs', 'evaluating', 'offered', 'committed'];
+const STAGES = ['keeping_tabs', 'evaluating', 'offered', 'committed'] as const;
+const stageSchema = z.enum(STAGES);
+const prospectTypeSchema = z.enum(['high_school', 'transfer', 'juco']);
+
+const prospectSchema = z
+  .object({
+    id: z.string().uuid(),
+    full_name: z.string(),
+    position: z.string().nullable(),
+    secondary_position: z.string().nullable(),
+    grad_year: z.number().nullable(),
+    height_inches: z.number().nullable(),
+    weight_lbs: z.number().nullable(),
+    region: z.string().nullable(),
+    current_school: z.string().nullable(),
+    stage: stageSchema,
+    stage_order: z.number(),
+    is_archived: z.boolean(),
+    created_by: z.string().uuid().nullable(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    in_portal: z.boolean(),
+    notes: z.string().nullable(),
+    prospect_type: prospectTypeSchema,
+    contact_phone: z.string().nullable(),
+    contact_email: z.string().nullable(),
+  })
+  .openapi('Prospect');
+
+const evaluationSchema = z
+  .object({
+    id: z.string().uuid(),
+    prospect_id: z.string().uuid(),
+    author_id: z.string().uuid().nullable(),
+    eval_date: z.string(),
+    rating: z.number(),
+    notes: z.string().nullable(),
+    tags: z.array(z.string()).nullable(),
+    created_at: z.string(),
+    author_name: z.string().nullable().optional(),
+  })
+  .openapi('Evaluation');
+
+const prospectQuerySchema = z.object({
+  search: z.string().optional(),
+  position: z.string().optional(),
+  gradYear: z.coerce.number().optional(),
+  stage: stageSchema.optional(),
+  region: z.string().optional(),
+  heightMin: z.coerce.number().optional(),
+  heightMax: z.coerce.number().optional(),
+  prospectType: prospectTypeSchema.optional(),
+});
+
+const createProspectSchema = z
+  .object({
+    fullName: z.string().min(1),
+    position: z.string().optional(),
+    secondaryPosition: z.string().optional(),
+    gradYear: z.number().optional(),
+    heightInches: z.number().optional(),
+    weightLbs: z.number().optional(),
+    region: z.string().optional(),
+    currentSchool: z.string().optional(),
+    inPortal: z.boolean().optional(),
+    notes: z.string().optional(),
+    prospectType: prospectTypeSchema.optional(),
+    contactPhone: z.string().optional(),
+    contactEmail: z.string().optional(),
+  })
+  .openapi('CreateProspect');
+
+const patchProspectSchema = z
+  .object({
+    fullName: z.string().min(1).optional(),
+    position: z.string().optional(),
+    secondaryPosition: z.string().optional(),
+    gradYear: z.number().optional(),
+    heightInches: z.number().optional(),
+    weightLbs: z.number().optional(),
+    region: z.string().optional(),
+    currentSchool: z.string().optional(),
+    inPortal: z.boolean().optional(),
+    notes: z.string().optional(),
+    prospectType: prospectTypeSchema.optional(),
+    contactPhone: z.string().optional(),
+    contactEmail: z.string().optional(),
+  })
+  .openapi('UpdateProspect');
+
+const stageChangeSchema = z
+  .object({
+    stage: stageSchema,
+    stageOrder: z.number().optional(),
+  })
+  .openapi('ChangeProspectStage');
+
+const createEvaluationSchema = z
+  .object({
+    rating: z.number().min(1).max(10),
+    notes: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    evalDate: z.string().optional(),
+  })
+  .openapi('CreateEvaluation');
+
+registry.registerPath({
+  method: 'get',
+  path: '/prospects',
+  tags: ['prospects'],
+  summary: 'List prospects with search and filters',
+  security: [{ bearerAuth: [] }],
+  request: { query: prospectQuerySchema },
+  responses: {
+    200: { description: 'Prospects', content: { 'application/json': { schema: z.object({ prospects: z.array(prospectSchema) }) } } },
+    401: { description: 'Not authenticated' },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/prospects/{id}',
+  tags: ['prospects'],
+  summary: 'Get a single prospect',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: 'Prospect', content: { 'application/json': { schema: z.object({ prospect: prospectSchema }) } } },
+    401: { description: 'Not authenticated' },
+    404: { description: 'Not found' },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/prospects',
+  tags: ['prospects'],
+  summary: 'Add a new prospect',
+  security: [{ bearerAuth: [] }],
+  request: { body: { content: { 'application/json': { schema: createProspectSchema } } } },
+  responses: {
+    201: { description: 'Created prospect', content: { 'application/json': { schema: z.object({ prospect: prospectSchema }) } } },
+    400: { description: 'fullName is required' },
+    401: { description: 'Not authenticated' },
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/prospects/{id}',
+  tags: ['prospects'],
+  summary: 'Update a prospect (partial)',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema, body: { content: { 'application/json': { schema: patchProspectSchema } } } },
+  responses: {
+    200: { description: 'Updated prospect', content: { 'application/json': { schema: z.object({ prospect: prospectSchema }) } } },
+    400: { description: 'No updatable fields provided' },
+    401: { description: 'Not authenticated' },
+    403: { description: 'Insufficient permissions' },
+    404: { description: 'Not found' },
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/prospects/{id}/stage',
+  tags: ['prospects'],
+  summary: 'Move a prospect to a different pipeline stage',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema, body: { content: { 'application/json': { schema: stageChangeSchema } } } },
+  responses: {
+    200: { description: 'Updated prospect', content: { 'application/json': { schema: z.object({ prospect: prospectSchema }) } } },
+    400: { description: 'Invalid stage' },
+    401: { description: 'Not authenticated' },
+    404: { description: 'Not found' },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/prospects/{id}/archive',
+  tags: ['prospects'],
+  summary: 'Archive (soft-delete) a prospect',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    204: { description: 'Archived' },
+    401: { description: 'Not authenticated' },
+    403: { description: 'Insufficient permissions — head_coach only' },
+    404: { description: 'Not found' },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/prospects/{id}/evaluations',
+  tags: ['prospects'],
+  summary: 'List evaluations for a prospect',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: 'Evaluations', content: { 'application/json': { schema: z.object({ evaluations: z.array(evaluationSchema) }) } } },
+    401: { description: 'Not authenticated' },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/prospects/{id}/evaluations',
+  tags: ['prospects'],
+  summary: 'Submit an evaluation for a prospect',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema, body: { content: { 'application/json': { schema: createEvaluationSchema } } } },
+  responses: {
+    201: { description: 'Created evaluation', content: { 'application/json': { schema: z.object({ evaluation: evaluationSchema }) } } },
+    400: { description: 'rating must be 1-10' },
+    401: { description: 'Not authenticated' },
+    404: { description: 'Prospect not found' },
+  },
+});
 
 // GET /prospects  — list with search + filters
-router.get('/', requireAuth, async (req, res) => {
-  const { search, position, gradYear, stage, region, heightMin, heightMax, prospectType } = req.query;
+router.get('/', requireAuth, validate({ query: prospectQuerySchema }), async (req, res) => {
+  const { search, position, gradYear, stage, region, heightMin, heightMax, prospectType } =
+    req.query as unknown as z.infer<typeof prospectQuerySchema>;
   const clauses: string[] = ['is_archived = FALSE'];
   const params: unknown[] = [];
 
@@ -23,7 +247,7 @@ router.get('/', requireAuth, async (req, res) => {
     clauses.push(`(position = $${params.length} OR secondary_position = $${params.length})`);
   }
   if (gradYear) {
-    params.push(Number(gradYear));
+    params.push(gradYear);
     clauses.push(`grad_year = $${params.length}`);
   }
   if (stage) {
@@ -35,11 +259,11 @@ router.get('/', requireAuth, async (req, res) => {
     clauses.push(`region = $${params.length}`);
   }
   if (heightMin) {
-    params.push(Number(heightMin));
+    params.push(heightMin);
     clauses.push(`height_inches >= $${params.length}`);
   }
   if (heightMax) {
-    params.push(Number(heightMax));
+    params.push(heightMax);
     clauses.push(`height_inches <= $${params.length}`);
   }
   if (prospectType) {
@@ -58,7 +282,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // GET /prospects/:id
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, validate({ params: idParamSchema }), async (req, res) => {
   try {
     const result = await query('SELECT * FROM prospects WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -70,19 +294,20 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /prospects — all authenticated users can add
-router.post('/', requireAuth, async (req, res) => {
-  const { fullName, position, secondaryPosition, gradYear, heightInches, weightLbs, region, currentSchool, inPortal, notes, prospectType, contactPhone, contactEmail } = req.body;
-  if (!fullName) return res.status(400).json({ error: 'fullName is required' });
+router.post('/', requireAuth, validate({ body: createProspectSchema }), async (req, res) => {
+  const {
+    fullName, position, secondaryPosition, gradYear, heightInches, weightLbs, region,
+    currentSchool, inPortal, notes, prospectType, contactPhone, contactEmail,
+  } = req.body as z.infer<typeof createProspectSchema>;
 
-  const VALID_TYPES = ['high_school', 'transfer', 'juco'];
-  const safeType = VALID_TYPES.includes(prospectType) ? prospectType : 'high_school';
+  const safeType = prospectType ?? 'high_school';
 
   try {
     const result = await query(
       `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, weight_lbs, region, current_school, in_portal, notes, prospect_type, contact_phone, contact_email, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, weightLbs ?? null, region, currentSchool, inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null, req.user!.id]
+      [fullName, position ?? null, secondaryPosition ?? null, gradYear ?? null, heightInches ?? null, weightLbs ?? null, region ?? null, currentSchool ?? null, inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null, req.user!.id]
     );
     const prospect = result.rows[0];
     recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: prospect.id, action: 'create' })
@@ -95,64 +320,69 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PATCH /prospects/:id
-router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
-  const fieldMap: Record<string, string> = {
-    fullName: 'full_name',
-    position: 'position',
-    secondaryPosition: 'secondary_position',
-    gradYear: 'grad_year',
-    heightInches: 'height_inches',
-    weightLbs: 'weight_lbs',
-    region: 'region',
-    currentSchool: 'current_school',
-    inPortal: 'in_portal',
-    notes: 'notes',
-    prospectType: 'prospect_type',
-    contactPhone: 'contact_phone',
-    contactEmail: 'contact_email',
-  };
+router.patch(
+  '/:id',
+  requireAuth,
+  requireRole('head_coach', 'assistant'),
+  validate({ params: idParamSchema, body: patchProspectSchema }),
+  async (req, res) => {
+    const fieldMap: Record<string, string> = {
+      fullName: 'full_name',
+      position: 'position',
+      secondaryPosition: 'secondary_position',
+      gradYear: 'grad_year',
+      heightInches: 'height_inches',
+      weightLbs: 'weight_lbs',
+      region: 'region',
+      currentSchool: 'current_school',
+      inPortal: 'in_portal',
+      notes: 'notes',
+      prospectType: 'prospect_type',
+      contactPhone: 'contact_phone',
+      contactEmail: 'contact_email',
+    };
 
-  try {
-    const current = await query('SELECT * FROM prospects WHERE id = $1', [req.params.id]);
-    if (current.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    const before = current.rows[0];
+    const body = req.body as z.infer<typeof patchProspectSchema> & Record<string, unknown>;
 
-    const sets: string[] = [];
-    const params: unknown[] = [];
-    const after: Record<string, unknown> = {};
-    for (const [apiKey, col] of Object.entries(fieldMap)) {
-      if (req.body[apiKey] !== undefined) {
-        params.push(req.body[apiKey]);
-        sets.push(`${col} = $${params.length}`);
-        after[col] = req.body[apiKey];
+    try {
+      const current = await query('SELECT * FROM prospects WHERE id = $1', [req.params.id]);
+      if (current.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+      const before = current.rows[0];
+
+      const sets: string[] = [];
+      const params: unknown[] = [];
+      const after: Record<string, unknown> = {};
+      for (const [apiKey, col] of Object.entries(fieldMap)) {
+        if (body[apiKey] !== undefined) {
+          params.push(body[apiKey]);
+          sets.push(`${col} = $${params.length}`);
+          after[col] = body[apiKey];
+        }
       }
+      if (sets.length === 0) return res.status(400).json({ error: 'No updatable fields provided' });
+
+      params.push(req.params.id);
+      const result = await query(
+        `UPDATE prospects SET ${sets.join(', ')}, updated_at = now() WHERE id = $${params.length} RETURNING *`,
+        params
+      );
+
+      for (const change of diffFields(before, after)) {
+        recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'update', ...change })
+          .catch(e => console.error('audit error:', errorMessage(e)));
+      }
+
+      return res.json({ prospect: result.rows[0] });
+    } catch (err) {
+      console.error('update prospect error:', errorMessage(err));
+      return res.status(500).json({ error: 'Failed to update prospect' });
     }
-    if (sets.length === 0) return res.status(400).json({ error: 'No updatable fields provided' });
-
-    params.push(req.params.id);
-    const result = await query(
-      `UPDATE prospects SET ${sets.join(', ')}, updated_at = now() WHERE id = $${params.length} RETURNING *`,
-      params
-    );
-
-    for (const change of diffFields(before, after)) {
-      recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'update', ...change })
-        .catch(e => console.error('audit error:', errorMessage(e)));
-    }
-
-    return res.json({ prospect: result.rows[0] });
-  } catch (err) {
-    console.error('update prospect error:', errorMessage(err));
-    return res.status(500).json({ error: 'Failed to update prospect' });
   }
-});
+);
 
 // PATCH /prospects/:id/stage  — all authenticated users can move stages
-router.patch('/:id/stage', requireAuth, async (req, res) => {
-  const { stage, stageOrder } = req.body;
-  if (!STAGES.includes(stage)) {
-    return res.status(400).json({ error: `stage must be one of: ${STAGES.join(', ')}` });
-  }
+router.patch('/:id/stage', requireAuth, validate({ params: idParamSchema, body: stageChangeSchema }), async (req, res) => {
+  const { stage, stageOrder } = req.body as z.infer<typeof stageChangeSchema>;
 
   try {
     const current = await query('SELECT stage FROM prospects WHERE id = $1', [req.params.id]);
@@ -196,25 +426,31 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
 });
 
 // POST /prospects/:id/archive  — soft delete, head_coach only
-router.post('/:id/archive', requireAuth, requireRole('head_coach'), async (req, res) => {
-  try {
-    const result = await query(
-      `UPDATE prospects SET is_archived = TRUE, updated_at = now() WHERE id = $1 RETURNING id`,
-      [req.params.id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+router.post(
+  '/:id/archive',
+  requireAuth,
+  requireRole('head_coach'),
+  validate({ params: idParamSchema }),
+  async (req, res) => {
+    try {
+      const result = await query(
+        `UPDATE prospects SET is_archived = TRUE, updated_at = now() WHERE id = $1 RETURNING id`,
+        [req.params.id]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
-    recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'archive' })
-      .catch(e => console.error('audit error:', errorMessage(e)));
-    return res.status(204).end();
-  } catch (err) {
-    console.error('archive error:', errorMessage(err));
-    return res.status(500).json({ error: 'Failed to archive prospect' });
+      recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'archive' })
+        .catch(e => console.error('audit error:', errorMessage(e)));
+      return res.status(204).end();
+    } catch (err) {
+      console.error('archive error:', errorMessage(err));
+      return res.status(500).json({ error: 'Failed to archive prospect' });
+    }
   }
-});
+);
 
 // GET /prospects/:id/evaluations
-router.get('/:id/evaluations', requireAuth, async (req, res) => {
+router.get('/:id/evaluations', requireAuth, validate({ params: idParamSchema }), async (req, res) => {
   try {
     const result = await query(
       `SELECT e.*, u.full_name AS author_name
@@ -232,18 +468,19 @@ router.get('/:id/evaluations', requireAuth, async (req, res) => {
 });
 
 // POST /prospects/:id/evaluations — all authenticated users can submit evaluations
-router.post('/:id/evaluations', requireAuth, async (req, res) => {
-  const { rating, notes, tags, evalDate } = req.body;
-  if (!rating || rating < 1 || rating > 10) {
-    return res.status(400).json({ error: 'rating must be 1–10' });
-  }
+router.post(
+  '/:id/evaluations',
+  requireAuth,
+  validate({ params: idParamSchema, body: createEvaluationSchema }),
+  async (req, res) => {
+    const { rating, notes, tags, evalDate } = req.body as z.infer<typeof createEvaluationSchema>;
 
-  try {
-    const prospectCheck = await query('SELECT id FROM prospects WHERE id = $1', [req.params.id]);
-    if (prospectCheck.rows.length === 0) return res.status(404).json({ error: 'Prospect not found' });
+    try {
+      const prospectCheck = await query('SELECT id FROM prospects WHERE id = $1', [req.params.id]);
+      if (prospectCheck.rows.length === 0) return res.status(404).json({ error: 'Prospect not found' });
 
-    const result = await query(
-      `WITH inserted AS (
+      const result = await query(
+        `WITH inserted AS (
          INSERT INTO evaluations (prospect_id, author_id, eval_date, rating, notes, tags)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *
@@ -251,31 +488,32 @@ router.post('/:id/evaluations', requireAuth, async (req, res) => {
        SELECT i.*, u.full_name AS author_name
        FROM inserted i
        JOIN users u ON u.id = i.author_id`,
-      [
-        req.params.id,
-        req.user!.id,
-        evalDate || new Date().toISOString().slice(0, 10),
-        rating,
-        notes || null,
-        tags && tags.length ? tags : null,
-      ]
-    );
-    const evaluation = result.rows[0];
+        [
+          req.params.id,
+          req.user!.id,
+          evalDate || new Date().toISOString().slice(0, 10),
+          rating,
+          notes || null,
+          tags && tags.length ? tags : null,
+        ]
+      );
+      const evaluation = result.rows[0];
 
-    await recordAudit({
-      actorId: req.user!.id,
-      entityType: 'evaluation',
-      entityId: evaluation.id,
-      action: 'create',
-      field: 'rating',
-      newValue: String(rating),
-    });
+      await recordAudit({
+        actorId: req.user!.id,
+        entityType: 'evaluation',
+        entityId: evaluation.id,
+        action: 'create',
+        field: 'rating',
+        newValue: String(rating),
+      });
 
-    return res.status(201).json({ evaluation });
-  } catch (err) {
-    console.error('create evaluation error:', errorMessage(err));
-    return res.status(500).json({ error: 'Failed to create evaluation' });
+      return res.status(201).json({ evaluation });
+    } catch (err) {
+      console.error('create evaluation error:', errorMessage(err));
+      return res.status(500).json({ error: 'Failed to create evaluation' });
+    }
   }
-});
+);
 
 export default router;

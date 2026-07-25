@@ -26,7 +26,10 @@ describe('POST /auth/login', () => {
     const response = await request(app).post('/auth/login').send({ email: testEmail });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: 'email and password are required' });
+    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ['password'] })])
+    );
   });
 
   test('returns the same 401 response for a wrong password and unknown email', async () => {
