@@ -9,7 +9,7 @@ const HEADERS = {
 };
 
 // On3 internal status → display status
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, string> = {
   Entered: 'Available',
   Expected: 'Available',
   Committed: 'Committed',
@@ -17,37 +17,76 @@ const STATUS_MAP = {
   Withdrawn: 'Withdrawn',
 };
 
+interface On3Entry {
+  player?: {
+    key?: number;
+    fullName?: string;
+    slug?: string;
+    position?: { abbr?: string };
+    height?: string;
+    classRank?: string;
+  };
+  organization?: { name?: string };
+  status?: {
+    type?: string;
+    committedAsset?: { name?: string };
+    transferEntered?: string;
+  };
+  transferRating?: { stars?: number };
+  rosterRating?: { stars?: number };
+}
+
+interface On3ApiResponse {
+  list?: On3Entry[];
+  pagination?: { pageCount?: number };
+}
+
+export interface PortalEntry {
+  on3Key?: number;
+  fullName: string;
+  slug: string | null;
+  positionAbbr: string | null;
+  height: string | null;
+  classRank: string | null;
+  fromSchool: string | null;
+  toSchool: string | null;
+  status: string;
+  stars: number | null;
+  portalEnteredAt: string | null;
+}
+
+export interface ScrapeOptions {
+  year?: number;
+  status?: string;
+  maxPages?: number;
+}
+
 /**
  * Fetch all currently-available basketball transfer portal entries from On3.
  * Uses the direct JSON API (no HTML scraping). Paginates through all pages.
- *
- * @param {object} opts
- * @param {number} [opts.year]     - Recruiting year (defaults to current year)
- * @param {string} [opts.status]   - On3 status filter: 'Entered' | 'Committed' | '' (all)
- * @param {number} [opts.maxPages] - Safety cap on pages fetched (default 20)
  */
 export async function scrapeOn3Portal({
   year = new Date().getFullYear(),
   status = 'Entered',
   maxPages = 20,
-} = {}) {
-  const entries = [];
+}: ScrapeOptions = {}): Promise<PortalEntry[]> {
+  const entries: PortalEntry[] = [];
   let page = 1;
   let totalPages = 1;
 
   do {
     const params = new URLSearchParams({
-      sportKey: SPORT_KEY,
-      year,
-      page,
-      limit: 50,
+      sportKey: String(SPORT_KEY),
+      year: String(year),
+      page: String(page),
+      limit: '50',
       ...(status ? { status } : {}),
     });
 
     const res = await fetch(`${ON3_API}?${params}`, { headers: HEADERS });
     if (!res.ok) throw new Error(`On3 API returned ${res.status} on page ${page}`);
 
-    const data = await res.json();
+    const data = (await res.json()) as On3ApiResponse;
     const list = data?.list;
     if (!Array.isArray(list)) throw new Error('Unexpected On3 API response shape');
 
@@ -62,7 +101,7 @@ export async function scrapeOn3Portal({
   return entries;
 }
 
-function normalizeEntry(entry) {
+function normalizeEntry(entry: On3Entry): PortalEntry {
   const player = entry.player ?? {};
   const status = entry.status ?? {};
 
@@ -75,7 +114,7 @@ function normalizeEntry(entry) {
     classRank: player.classRank ?? null,
     fromSchool: entry.organization?.name ?? null,
     toSchool: status.committedAsset?.name ?? null,
-    status: STATUS_MAP[status.type] ?? status.type ?? 'Unknown',
+    status: (status.type ? STATUS_MAP[status.type] : undefined) ?? status.type ?? 'Unknown',
     stars: entry.transferRating?.stars ?? entry.rosterRating?.stars ?? null,
     portalEnteredAt: status.transferEntered ?? null,
   };

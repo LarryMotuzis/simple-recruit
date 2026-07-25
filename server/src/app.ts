@@ -1,10 +1,13 @@
 import express from 'express';
+import type { ErrorRequestHandler, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 
+import { generateOpenApiDocument } from './lib/openapi.js';
 import authRoutes from './routes/auth.js';
 import prospectRoutes from './routes/prospects.js';
 import auditRoutes from './routes/audit.js';
@@ -12,6 +15,7 @@ import portalRoutes from './routes/portal.js';
 import rosterRoutes from './routes/roster.js';
 import teamSettingsRoutes from './routes/teamSettings.js';
 import userRoutes from './routes/users.js';
+import { errorMessage } from './lib/errors.js';
 
 dotenv.config();
 
@@ -54,12 +58,26 @@ app.use('/roster', rosterRoutes);
 app.use('/team-settings', teamSettingsRoutes);
 app.use('/users', userRoutes);
 
+// Swagger UI's inline scripts are blocked by helmet's default CSP; strip it
+// for just this route rather than weakening CSP for the whole app.
+const openApiDocument = generateOpenApiDocument();
+app.get('/openapi.json', (req, res) => res.json(openApiDocument));
+app.use(
+  '/api-docs',
+  (req: Request, res: Response, next: NextFunction) => {
+    res.removeHeader('Content-Security-Policy');
+    next();
+  },
+  swaggerUi.serve,
+  swaggerUi.setup(openApiDocument)
+);
+
 // 404
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 
 // Global error handler — catches any error passed via next(err) or thrown in middleware
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.message);
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  console.error('Unhandled error:', errorMessage(err));
   res.status(500).json({ error: 'Internal server error' });
-});
+};
+app.use(errorHandler);

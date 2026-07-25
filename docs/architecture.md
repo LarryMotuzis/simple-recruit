@@ -26,7 +26,9 @@ Five tables: `users`, `prospects`, `evaluations`, `stat_entries`, `audit_log`. S
 
 **Computed metrics are calculated, not stored.** Efficiency scores and rating trends are derived in the service layer at read time. This keeps data normalized, avoids stale denormalized values, and gives a clean, dependency-free function to unit test.
 
-**Role-based access control.** Three roles — `head_coach`, `assistant`, `viewer`. Enforced by middleware that runs after authentication. The audit log is readable only by `head_coach`.
+**Role-based access control.** Enforced by middleware that runs after authentication. The audit log is readable only by `head_coach`.
+
+**Request validation and API docs share one schema, not two.** Every route validates its body/query/params with a Zod schema, and the OpenAPI spec (served at `/api-docs`) is generated from those same schemas via `zod-to-openapi`. There's no separate hand-maintained spec to fall out of sync with what the API actually accepts.
 
 ## Auth flow
 

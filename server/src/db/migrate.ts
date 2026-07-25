@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pool } from './pool.js';
+import { errorMessage } from '../lib/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDir = path.join(__dirname, 'migrations');
@@ -15,7 +16,7 @@ async function migrate() {
     )
   `);
 
-  const applied = await pool.query('SELECT filename FROM schema_migrations');
+  const applied = await pool.query<{ filename: string }>('SELECT filename FROM schema_migrations');
   const appliedSet = new Set(applied.rows.map((r) => r.filename));
 
   const files = fs
@@ -42,6 +43,6 @@ async function migrate() {
 }
 
 migrate().catch((err) => {
-  console.error('Migration failed:', err.message);
+  console.error('Migration failed:', errorMessage(err));
   process.exit(1);
 });
