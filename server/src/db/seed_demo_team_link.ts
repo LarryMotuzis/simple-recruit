@@ -6,11 +6,12 @@
  * - Consolidates their two team_settings rows into one team row
  */
 import { pool } from './pool.js';
+import { errorMessage } from '../lib/errors.js';
 
 async function seedDemoTeamLink() {
   // 1. Create Riverbend team
   const existing = await pool.query(`SELECT id FROM teams WHERE name = 'Riverbend Basketball'`);
-  let riverbendTeamId;
+  let riverbendTeamId: string;
   if (existing.rows.length > 0) {
     riverbendTeamId = existing.rows[0].id;
     console.log(`Riverbend team already exists: ${riverbendTeamId}`);
@@ -64,6 +65,6 @@ async function seedDemoTeamLink() {
 }
 
 seedDemoTeamLink().catch(err => {
-  console.error('Team seed failed:', err.message);
+  console.error('Team seed failed:', errorMessage(err));
   process.exit(1);
 });

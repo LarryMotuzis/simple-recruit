@@ -2,6 +2,7 @@ import express from 'express';
 import { query } from '../db/pool.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { recordAudit, diffFields } from '../services/auditService.js';
+import { errorMessage } from '../lib/errors.js';
 
 const router = express.Router();
 
@@ -10,8 +11,8 @@ const STAGES = ['keeping_tabs', 'evaluating', 'offered', 'committed'];
 // GET /prospects  — list with search + filters
 router.get('/', requireAuth, async (req, res) => {
   const { search, position, gradYear, stage, region, heightMin, heightMax, prospectType } = req.query;
-  const clauses = ['is_archived = FALSE'];
-  const params = [];
+  const clauses: string[] = ['is_archived = FALSE'];
+  const params: unknown[] = [];
 
   if (search) {
     params.push(`%${search}%`);
@@ -51,7 +52,7 @@ router.get('/', requireAuth, async (req, res) => {
     const result = await query(sql, params);
     return res.json({ prospects: result.rows });
   } catch (err) {
-    console.error('list prospects error:', err.message);
+    console.error('list prospects error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to load prospects' });
   }
 });
@@ -63,7 +64,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
     return res.json({ prospect: result.rows[0] });
   } catch (err) {
-    console.error('get prospect error:', err.message);
+    console.error('get prospect error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to load prospect' });
   }
 });
@@ -81,21 +82,21 @@ router.post('/', requireAuth, async (req, res) => {
       `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, weight_lbs, region, current_school, in_portal, notes, prospect_type, contact_phone, contact_email, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, weightLbs ?? null, region, currentSchool, inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null, req.user.id]
+      [fullName, position, secondaryPosition ?? null, gradYear, heightInches, weightLbs ?? null, region, currentSchool, inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null, req.user!.id]
     );
     const prospect = result.rows[0];
-    recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: prospect.id, action: 'create' })
-      .catch(e => console.error('audit error:', e.message));
+    recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: prospect.id, action: 'create' })
+      .catch(e => console.error('audit error:', errorMessage(e)));
     return res.status(201).json({ prospect });
   } catch (err) {
-    console.error('create prospect error:', err.message);
+    console.error('create prospect error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to create prospect' });
   }
 });
 
 // PATCH /prospects/:id
 router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
-  const fieldMap = {
+  const fieldMap: Record<string, string> = {
     fullName: 'full_name',
     position: 'position',
     secondaryPosition: 'secondary_position',
@@ -116,9 +117,9 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
     if (current.rows.length === 0) return res.status(404).json({ error: 'Not found' });
     const before = current.rows[0];
 
-    const sets = [];
-    const params = [];
-    const after = {};
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    const after: Record<string, unknown> = {};
     for (const [apiKey, col] of Object.entries(fieldMap)) {
       if (req.body[apiKey] !== undefined) {
         params.push(req.body[apiKey]);
@@ -135,13 +136,13 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
     );
 
     for (const change of diffFields(before, after)) {
-      recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: req.params.id, action: 'update', ...change })
-        .catch(e => console.error('audit error:', e.message));
+      recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'update', ...change })
+        .catch(e => console.error('audit error:', errorMessage(e)));
     }
 
     return res.json({ prospect: result.rows[0] });
   } catch (err) {
-    console.error('update prospect error:', err.message);
+    console.error('update prospect error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to update prospect' });
   }
 });
@@ -164,32 +165,32 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
     );
 
     if (oldStage !== stage) {
-      recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: req.params.id, action: 'stage_change', field: 'stage', oldValue: oldStage, newValue: stage })
-        .catch(e => console.error('audit error:', e.message));
+      recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'stage_change', field: 'stage', oldValue: oldStage, newValue: stage })
+        .catch(e => console.error('audit error:', errorMessage(e)));
     }
 
     // Auto-add to the committing user's roster (or their team's roster) when stage becomes committed
     if (stage === 'committed' && oldStage !== 'committed') {
       const prospect = result.rows[0];
-      const teamRow = await query('SELECT team_id FROM users WHERE id = $1', [req.user.id]);
+      const teamRow = await query<{ team_id: string | null }>('SELECT team_id FROM users WHERE id = $1', [req.user!.id]);
       const teamId = teamRow.rows[0]?.team_id ?? null;
 
       const alreadyOnRoster = teamId
         ? await query('SELECT id FROM roster WHERE prospect_id = $1 AND team_id = $2', [prospect.id, teamId])
-        : await query('SELECT id FROM roster WHERE prospect_id = $1 AND user_id = $2', [prospect.id, req.user.id]);
+        : await query('SELECT id FROM roster WHERE prospect_id = $1 AND user_id = $2', [prospect.id, req.user!.id]);
 
       if (alreadyOnRoster.rows.length === 0) {
         await query(
           `INSERT INTO roster (full_name, position, prospect_id, created_by, user_id, team_id)
            VALUES ($1, $2, $3, $4, $5, $6)`,
-          [prospect.full_name, prospect.position || null, prospect.id, req.user.id, req.user.id, teamId]
+          [prospect.full_name, prospect.position || null, prospect.id, req.user!.id, req.user!.id, teamId]
         );
       }
     }
 
     return res.json({ prospect: result.rows[0] });
   } catch (err) {
-    console.error('stage change error:', err.message);
+    console.error('stage change error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to change stage' });
   }
 });
@@ -203,11 +204,11 @@ router.post('/:id/archive', requireAuth, requireRole('head_coach'), async (req, 
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
-    recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: req.params.id, action: 'archive' })
-      .catch(e => console.error('audit error:', e.message));
+    recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: req.params.id, action: 'archive' })
+      .catch(e => console.error('audit error:', errorMessage(e)));
     return res.status(204).end();
   } catch (err) {
-    console.error('archive error:', err.message);
+    console.error('archive error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to archive prospect' });
   }
 });
@@ -225,7 +226,7 @@ router.get('/:id/evaluations', requireAuth, async (req, res) => {
     );
     return res.json({ evaluations: result.rows });
   } catch (err) {
-    console.error('list evaluations error:', err.message);
+    console.error('list evaluations error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to load evaluations' });
   }
 });
@@ -252,7 +253,7 @@ router.post('/:id/evaluations', requireAuth, async (req, res) => {
        JOIN users u ON u.id = i.author_id`,
       [
         req.params.id,
-        req.user.id,
+        req.user!.id,
         evalDate || new Date().toISOString().slice(0, 10),
         rating,
         notes || null,
@@ -262,7 +263,7 @@ router.post('/:id/evaluations', requireAuth, async (req, res) => {
     const evaluation = result.rows[0];
 
     await recordAudit({
-      actorId: req.user.id,
+      actorId: req.user!.id,
       entityType: 'evaluation',
       entityId: evaluation.id,
       action: 'create',
@@ -272,7 +273,7 @@ router.post('/:id/evaluations', requireAuth, async (req, res) => {
 
     return res.status(201).json({ evaluation });
   } catch (err) {
-    console.error('create evaluation error:', err.message);
+    console.error('create evaluation error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to create evaluation' });
   }
 });

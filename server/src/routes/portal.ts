@@ -3,6 +3,7 @@ import { query } from '../db/pool.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { recordAudit } from '../services/auditService.js';
 import { scrapeOn3Portal } from '../services/portalScraper.js';
+import { errorMessage } from '../lib/errors.js';
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ const router = express.Router();
 router.get('/', requireAuth, async (req, res) => {
   const { status, position, level = 'd1' } = req.query;
   const clauses = [`level = $1`];
-  const params = [level];
+  const params: unknown[] = [level];
 
   if (status) {
     params.push(status);
@@ -42,7 +43,7 @@ router.get('/', requireAuth, async (req, res) => {
       lastSync: syncResult.rows[0]?.last_sync ?? null,
     });
   } catch (err) {
-    console.error('list portal error:', err.message);
+    console.error('list portal error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to load portal feed' });
   }
 });
@@ -56,7 +57,7 @@ router.post('/sync', requireAuth, requireRole('head_coach', 'assistant'), async 
     let updated = 0;
 
     for (const e of entries) {
-      const result = await query(
+      const result = await query<{ is_new: boolean }>(
         `INSERT INTO portal_feed
            (on3_key, full_name, position_abbr, height, class_rank,
             from_school, to_school, status, stars, portal_entered_at, on3_slug,
@@ -81,8 +82,8 @@ router.post('/sync', requireAuth, requireRole('head_coach', 'assistant'), async 
 
     return res.json({ synced: entries.length, inserted, updated });
   } catch (err) {
-    console.error('portal sync error:', err.message);
-    return res.status(502).json({ error: err.message || 'Sync failed' });
+    console.error('portal sync error:', errorMessage(err));
+    return res.status(502).json({ error: errorMessage(err) || 'Sync failed' });
   }
 });
 
@@ -99,7 +100,7 @@ router.post('/import-csv', requireAuth, requireRole('head_coach', 'assistant'), 
 
   let inserted = 0;
   let updated = 0;
-  const errors = [];
+  const errors: string[] = [];
 
   for (const row of rows) {
     const name = row.full_name?.trim();
@@ -109,7 +110,7 @@ router.post('/import-csv', requireAuth, requireRole('head_coach', 'assistant'), 
     const csvKey = `${name.toLowerCase()}|${school.toLowerCase()}`;
 
     try {
-      const result = await query(
+      const result = await query<{ is_new: boolean }>(
         `INSERT INTO portal_feed
            (csv_key, full_name, position_abbr, height, class_rank,
             from_school, status, stars, level, source)
@@ -138,7 +139,7 @@ router.post('/import-csv', requireAuth, requireRole('head_coach', 'assistant'), 
       if (result.rows[0]?.is_new) inserted++;
       else updated++;
     } catch (err) {
-      errors.push(`${name}: ${err.message}`);
+      errors.push(`${name}: ${errorMessage(err)}`);
     }
   }
 
@@ -148,7 +149,7 @@ router.post('/import-csv', requireAuth, requireRole('head_coach', 'assistant'), 
 // DELETE /portal/csv-entries — clear all CSV entries for a level
 router.delete('/csv-entries', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
   const { level } = req.query;
-  if (!['d2', 'juco_d1', 'juco_d2'].includes(level)) {
+  if (!['d2', 'juco_d1', 'juco_d2'].includes(level as string)) {
     return res.status(400).json({ error: 'Invalid level' });
   }
   try {
@@ -185,7 +186,7 @@ router.post('/:id/import', requireAuth, requireRole('head_coach', 'assistant'), 
       `INSERT INTO prospects (full_name, position, height_inches, current_school, in_portal, created_by)
        VALUES ($1, $2, $3, $4, TRUE, $5)
        RETURNING *`,
-      [e.full_name, e.position_abbr, heightInches, e.from_school, req.user.id]
+      [e.full_name, e.position_abbr, heightInches, e.from_school, req.user!.id]
     );
     const prospect = prospectResult.rows[0];
 
@@ -193,12 +194,12 @@ router.post('/:id/import', requireAuth, requireRole('head_coach', 'assistant'), 
       prospect.id, e.id,
     ]);
 
-    recordAudit({ actorId: req.user.id, entityType: 'prospect', entityId: prospect.id, action: 'create', field: 'source', newValue: `portal_import_${e.level}` })
-      .catch(err2 => console.error('audit error:', err2.message));
+    recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: prospect.id, action: 'create', field: 'source', newValue: `portal_import_${e.level}` })
+      .catch(err2 => console.error('audit error:', errorMessage(err2)));
 
     return res.status(201).json({ prospect });
   } catch (err) {
-    console.error('portal import error:', err.message);
+    console.error('portal import error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to import prospect' });
   }
 });

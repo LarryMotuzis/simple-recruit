@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { pool } from './pool.js';
+import { errorMessage } from '../lib/errors.js';
 
 // Fictional Riverbend Basketball roster
 const ROSTER = [
@@ -97,6 +98,6 @@ async function seedDemoTeam() {
 }
 
 seedDemoTeam().catch(err => {
-  console.error('Seed failed:', err.message);
+  console.error('Seed failed:', errorMessage(err));
   process.exit(1);
 });

@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import { query } from '../db/pool.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { errorMessage } from '../lib/errors.js';
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.get('/', requireAuth, requireRole('admin'), async (req, res) => {
     );
     return res.json({ users: result.rows });
   } catch (err) {
-    console.error('list users error:', err.message);
+    console.error('list users error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to list users' });
   }
 });
@@ -46,7 +47,7 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
     );
     return res.status(201).json({ user: result.rows[0] });
   } catch (err) {
-    console.error('create user error:', err.message);
+    console.error('create user error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to create user' });
   }
 });
@@ -61,7 +62,7 @@ router.patch('/:id/role', requireAuth, requireRole('admin'), async (req, res) =>
   }
 
   // Prevent admin from demoting themselves
-  if (id === req.user.id) {
+  if (id === req.user!.id) {
     return res.status(400).json({ error: 'Cannot change your own role' });
   }
 
@@ -75,7 +76,7 @@ router.patch('/:id/role', requireAuth, requireRole('admin'), async (req, res) =>
     }
     return res.json({ user: result.rows[0] });
   } catch (err) {
-    console.error('update role error:', err.message);
+    console.error('update role error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to update role' });
   }
 });
@@ -84,7 +85,7 @@ router.patch('/:id/role', requireAuth, requireRole('admin'), async (req, res) =>
 router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
 
-  if (id === req.user.id) {
+  if (id === req.user!.id) {
     return res.status(400).json({ error: 'Cannot delete your own account' });
   }
 
@@ -95,7 +96,7 @@ router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
     }
     return res.status(204).end();
   } catch (err) {
-    console.error('delete user error:', err.message);
+    console.error('delete user error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to delete user' });
   }
 });

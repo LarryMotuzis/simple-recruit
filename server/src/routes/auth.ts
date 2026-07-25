@@ -1,17 +1,20 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import type { CookieOptions } from 'express';
 import { query } from '../db/pool.js';
 import {
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
+  type Role,
 } from '../lib/tokens.js';
+import { errorMessage } from '../lib/errors.js';
 
 const router = express.Router();
 
 const REFRESH_COOKIE = 'refresh_token';
 const isProd = process.env.NODE_ENV === 'production';
-const cookieOptions = {
+const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: isProd,
   // cross-origin (Vercel frontend ↔ Railway backend) requires SameSite=None + Secure
@@ -46,7 +49,7 @@ router.post('/register', async (req, res) => {
 
     return res.status(201).json({ user: result.rows[0] });
   } catch (err) {
-    console.error('register error:', err.message);
+    console.error('register error:', errorMessage(err));
     return res.status(500).json({ error: 'Registration failed' });
   }
 });
@@ -59,7 +62,13 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const result = await query(
+    const result = await query<{
+      id: string;
+      email: string;
+      password_hash: string;
+      full_name: string;
+      role: Role;
+    }>(
       'SELECT id, email, password_hash, full_name, role FROM users WHERE email = $1',
       [email]
     );
@@ -80,7 +89,7 @@ router.post('/login', async (req, res) => {
       user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
     });
   } catch (err) {
-    console.error('login error:', err.message);
+    console.error('login error:', errorMessage(err));
     return res.status(500).json({ error: 'Login failed' });
   }
 });
@@ -92,7 +101,7 @@ router.post('/refresh', async (req, res) => {
 
   try {
     const payload = verifyRefreshToken(token);
-    const result = await query(
+    const result = await query<{ id: string; email: string; role: Role }>(
       'SELECT id, email, role FROM users WHERE id = $1',
       [payload.sub]
     );

@@ -1,4 +1,5 @@
 import { pool } from './pool.js';
+import { errorMessage } from '../lib/errors.js';
 
 const PROSPECTS = [
   // === KEEPING TABS ===
@@ -223,13 +224,13 @@ async function seedDemoProspects() {
   );
   const assistantId = assistantResult.rows[0].id;
 
-  const coachIds = {
+  const coachIds: Record<string, string> = {
     'dwhitfield@riverbendu.edu': headCoachId,
     'mreeves@riverbendu.edu': assistantId,
   };
 
   // Insert prospects
-  const prospectIds = {};
+  const prospectIds: Record<string, string> = {};
   let added = 0;
   let skipped = 0;
 
@@ -303,6 +304,6 @@ async function seedDemoProspects() {
 }
 
 seedDemoProspects().catch(err => {
-  console.error('Seed failed:', err.message);
+  console.error('Seed failed:', errorMessage(err));
   process.exit(1);
 });

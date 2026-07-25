@@ -1,4 +1,5 @@
 import express from 'express';
+import type { ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
@@ -12,6 +13,7 @@ import portalRoutes from './routes/portal.js';
 import rosterRoutes from './routes/roster.js';
 import teamSettingsRoutes from './routes/teamSettings.js';
 import userRoutes from './routes/users.js';
+import { errorMessage } from './lib/errors.js';
 
 dotenv.config();
 
@@ -58,8 +60,8 @@ app.use('/users', userRoutes);
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 
 // Global error handler — catches any error passed via next(err) or thrown in middleware
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.message);
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  console.error('Unhandled error:', errorMessage(err));
   res.status(500).json({ error: 'Internal server error' });
-});
+};
+app.use(errorHandler);

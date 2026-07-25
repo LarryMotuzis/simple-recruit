@@ -1,5 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import type { QueryResult, QueryResultRow } from 'pg';
 
 dotenv.config();
 
@@ -13,4 +14,7 @@ export const pool = new Pool({
   connectionTimeoutMillis: 10_000,
 });
 
-export const query = (text, params) => pool.query(text, params);
+export const query = <T extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params?: unknown[]
+): Promise<QueryResult<T>> => pool.query<T>(text, params);

@@ -1,18 +1,24 @@
 import express from 'express';
 import { query, pool } from '../db/pool.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { errorMessage } from '../lib/errors.js';
 
 const router = express.Router();
 
+interface ScopeClause {
+  clause: string;
+  params: unknown[];
+}
+
 // Returns the user's team_id (null if they aren't on a team).
-async function getTeamId(userId) {
-  const r = await query('SELECT team_id FROM users WHERE id = $1', [userId]);
+async function getTeamId(userId: string): Promise<string | null> {
+  const r = await query<{ team_id: string | null }>('SELECT team_id FROM users WHERE id = $1', [userId]);
   return r.rows[0]?.team_id ?? null;
 }
 
 // WHERE clause + params for scoping a roster query to the right team/user.
 // Returns { clause, params } where params already includes scopeId at position 1.
-function scopeClause(teamId, userId) {
+function scopeClause(teamId: string | null, userId: string): ScopeClause {
   if (teamId) return { clause: 'r.team_id = $1', params: [teamId] };
   return { clause: 'r.user_id = $1', params: [userId] };
 }
@@ -20,8 +26,8 @@ function scopeClause(teamId, userId) {
 // GET /roster
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const teamId = await getTeamId(req.user.id);
-    const { clause, params } = scopeClause(teamId, req.user.id);
+    const teamId = await getTeamId(req.user!.id);
+    const { clause, params } = scopeClause(teamId, req.user!.id);
     const result = await query(`
       SELECT r.*,
              dc.position  AS chart_position,
@@ -35,7 +41,7 @@ router.get('/', requireAuth, async (req, res) => {
     `, params);
     return res.json({ players: result.rows });
   } catch (err) {
-    console.error('roster list error:', err.message);
+    console.error('roster list error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to load roster' });
   }
 });
@@ -46,8 +52,8 @@ router.post('/', requireAuth, requireRole('head_coach', 'assistant'), async (req
   if (!fullName?.trim()) return res.status(400).json({ error: 'full_name is required' });
 
   try {
-    const teamId = await getTeamId(req.user.id);
-    const { clause, params: scopeParams } = scopeClause(teamId, req.user.id);
+    const teamId = await getTeamId(req.user!.id);
+    const { clause, params: scopeParams } = scopeClause(teamId, req.user!.id);
 
     if (prospectId) {
       const existing = await query(
@@ -62,11 +68,11 @@ router.post('/', requireAuth, requireRole('head_coach', 'assistant'), async (req
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
       [fullName.trim(), position || null, jerseyNumber || null, year || null,
        heightInches || null, notes || null, prospectId || null,
-       req.user.id, req.user.id, teamId]
+       req.user!.id, req.user!.id, teamId]
     );
     return res.status(201).json({ player: result.rows[0] });
   } catch (err) {
-    console.error('roster add error:', err.message);
+    console.error('roster add error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to add player' });
   }
 });
@@ -75,8 +81,8 @@ router.post('/', requireAuth, requireRole('head_coach', 'assistant'), async (req
 router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
   const { fullName, position, jerseyNumber, year, heightInches, notes } = req.body;
   try {
-    const teamId = await getTeamId(req.user.id);
-    const { clause, params: scopeParams } = scopeClause(teamId, req.user.id);
+    const teamId = await getTeamId(req.user!.id);
+    const { clause, params: scopeParams } = scopeClause(teamId, req.user!.id);
 
     const result = await query(
       `UPDATE roster SET
@@ -102,8 +108,8 @@ router.patch('/:id', requireAuth, requireRole('head_coach', 'assistant'), async 
 // DELETE /roster/:id
 router.delete('/:id', requireAuth, requireRole('head_coach', 'assistant'), async (req, res) => {
   try {
-    const teamId = await getTeamId(req.user.id);
-    const { clause, params: scopeParams } = scopeClause(teamId, req.user.id);
+    const teamId = await getTeamId(req.user!.id);
+    const { clause, params: scopeParams } = scopeClause(teamId, req.user!.id);
     await query(
       `DELETE FROM roster WHERE id = $1 AND ${clause.replace('$1', '$2')}`,
       [req.params.id, ...scopeParams]
@@ -124,8 +130,8 @@ router.put('/depth-chart', requireAuth, requireRole('head_coach', 'assistant'), 
   }
 
   try {
-    const teamId = await getTeamId(req.user.id);
-    const { clause, params: scopeParams } = scopeClause(teamId, req.user.id);
+    const teamId = await getTeamId(req.user!.id);
+    const { clause, params: scopeParams } = scopeClause(teamId, req.user!.id);
 
     if (!rosterId) {
       await query(
@@ -158,7 +164,7 @@ router.put('/depth-chart', requireAuth, requireRole('head_coach', 'assistant'), 
     `, scopeParams);
     return res.json({ players: result.rows });
   } catch (err) {
-    console.error('depth chart error:', err.message);
+    console.error('depth chart error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to update depth chart' });
   }
 });
@@ -170,8 +176,8 @@ router.post('/depth-chart/swap', requireAuth, requireRole('head_coach', 'assista
   if (!a?.rosterId || !b?.rosterId) return res.status(400).json({ error: 'Both slots require a rosterId' });
   if (!valid.includes(a.position) || !valid.includes(b.position)) return res.status(400).json({ error: 'Invalid position' });
 
-  const teamId = await getTeamId(req.user.id);
-  const { clause, params: scopeParams } = scopeClause(teamId, req.user.id);
+  const teamId = await getTeamId(req.user!.id);
+  const { clause, params: scopeParams } = scopeClause(teamId, req.user!.id);
 
   const client = await pool.connect();
   try {
@@ -204,7 +210,7 @@ router.post('/depth-chart/swap', requireAuth, requireRole('head_coach', 'assista
     return res.json({ players: result.rows });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('depth chart swap error:', err.message);
+    console.error('depth chart swap error:', errorMessage(err));
     return res.status(500).json({ error: 'Failed to swap depth chart slots' });
   } finally {
     client.release();

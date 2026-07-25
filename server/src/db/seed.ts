@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { pool } from './pool.js';
+import { errorMessage } from '../lib/errors.js';
 
 const users = [
   {
@@ -42,6 +43,6 @@ async function seed() {
 }
 
 seed().catch(err => {
-  console.error('Seed failed:', err.message);
+  console.error('Seed failed:', errorMessage(err));
   process.exit(1);
 });
