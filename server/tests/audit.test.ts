@@ -3,15 +3,24 @@ import request from 'supertest';
 
 import { app } from '../src/app.js';
 import { pool, query } from '../src/db/pool.js';
-import { signAccessToken } from '../src/lib/tokens.js';
+import { signAccessToken, type Role } from '../src/lib/tokens.js';
+
+interface TestUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: Role;
+}
 
 const suffix = Date.now();
-const viewer = {
+const viewer: TestUser = {
+  id: '',
   email: `audit-viewer-${suffix}@example.test`,
   fullName: 'Audit Viewer',
   role: 'viewer',
 };
-const headCoach = {
+const headCoach: TestUser = {
+  id: '',
   email: `audit-head-coach-${suffix}@example.test`,
   fullName: 'Audit Head Coach',
   role: 'head_coach',

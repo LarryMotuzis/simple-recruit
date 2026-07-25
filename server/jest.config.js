@@ -9,5 +9,5 @@ export default {
   transform: {
     '^.+\\.ts$': ['ts-jest', { useESM: true }],
   },
-  testMatch: ['**/tests/**/*.test.js', '**/tests/**/*.test.ts'],
+  testMatch: ['**/tests/**/*.test.ts'],
 };
