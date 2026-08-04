@@ -6,6 +6,7 @@ import { api } from '../api/client.js';
 import { ratingTrend } from '../lib/metrics.js';
 import RatingChart from '../components/RatingChart.jsx';
 import EvaluationForm from '../components/EvaluationForm.jsx';
+import BoxScoreForm from '../components/BoxScoreForm.jsx';
 
 const STAGE_BADGE = {
   keeping_tabs: 'bg-slate-100 text-slate-600',
@@ -36,10 +37,18 @@ export default function ProspectDetail() {
 
   const [prospect, setProspect] = useState(null);
   const [evaluations, setEvaluations] = useState([]);
+  const [statEntries, setStatEntries] = useState([]);
+  const [averageEfficiency, setAverageEfficiency] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const canEval = !!user;
   const canDelete = user?.role === 'admin' || user?.role === 'head_coach';
+
+  const loadStats = async () => {
+    const { statEntries, averageEfficiency } = await api.listStatEntries(id);
+    setStatEntries(statEntries);
+    setAverageEfficiency(averageEfficiency);
+  };
 
   useEffect(() => {
     async function load() {
@@ -52,6 +61,7 @@ export default function ProspectDetail() {
         ]);
         setProspect(prospect);
         setEvaluations(evaluations);
+        await loadStats();
       } catch (err) {
         setError(err.message || 'Failed to load prospect');
       } finally {
@@ -62,6 +72,14 @@ export default function ProspectDetail() {
   }, [id]);
 
   const handleEvalCreated = (newEval) => setEvaluations((prev) => [...prev, newEval]);
+
+  const handleStatCreated = async () => {
+    try {
+      await loadStats();
+    } catch (err) {
+      setError(err.message || 'Failed to refresh box scores');
+    }
+  };
 
   const handleRemove = async () => {
     if (!confirm(`Remove ${prospect.full_name} from prospects? This cannot be undone.`)) return;
@@ -155,6 +173,50 @@ export default function ProspectDetail() {
         <h2 className="text-sm font-semibold text-slate-700 mb-4">Rating trend</h2>
         <RatingChart data={trendData} />
       </div>
+
+      {/* Box score card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 className="text-sm font-semibold text-slate-700">Box score</h2>
+          {statEntries.length > 0 && (
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+              Avg efficiency: {averageEfficiency}
+            </span>
+          )}
+        </div>
+
+        {statEntries.length === 0 ? (
+          <p className="text-slate-400 text-sm">No box scores logged yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {[...statEntries].reverse().map((s) => (
+              <div key={s.id} className="border-l-2 border-blue-200 pl-4">
+                <div className="flex items-baseline gap-3 flex-wrap mb-1">
+                  <span className="font-bold text-slate-900 text-base tabular-nums">
+                    {s.efficiency}
+                    <span className="text-slate-400 font-normal text-sm"> EFF</span>
+                  </span>
+                  <span className="text-slate-500 text-xs">{formatDate(s.game_date)}</span>
+                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {s.fg_percentage}% FG
+                  </span>
+                </div>
+                <p className="text-slate-600 text-sm">
+                  {s.points ?? 0} PTS · {s.rebounds ?? 0} REB · {s.assists ?? 0} AST · {s.fg_made ?? 0}/{s.fg_attempted ?? 0} FG
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Log box score */}
+      {canEval && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Log box score</h2>
+          <BoxScoreForm prospectId={id} onCreated={handleStatCreated} onError={setError} />
+        </div>
+      )}
 
       {/* Log evaluation */}
       {canEval && (

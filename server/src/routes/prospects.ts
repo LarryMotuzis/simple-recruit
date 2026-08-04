@@ -2,7 +2,20 @@ import express from 'express';
 import { query } from '../db/pool.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { recordAudit, diffFields } from '../services/auditService.js';
+import { efficiency, fgPercentage, averageEfficiency, type BoxScoreStat } from '../services/metricsService.js';
+import type { StatEntryRow } from '../types/domain.js';
 import { errorMessage } from '../lib/errors.js';
+
+// stat_entries columns are nullable in the DB; metricsService expects undefined for "not present".
+function toBoxScoreStat(row: StatEntryRow): BoxScoreStat {
+  return {
+    points: row.points ?? undefined,
+    rebounds: row.rebounds ?? undefined,
+    assists: row.assists ?? undefined,
+    fg_made: row.fg_made ?? undefined,
+    fg_attempted: row.fg_attempted ?? undefined,
+  };
+}
 import { z } from '../lib/zod.js';
 import { registry } from '../lib/openapi.js';
 import { validate } from '../lib/validate.js';
@@ -116,6 +129,34 @@ const createEvaluationSchema = z
   })
   .openapi('CreateEvaluation');
 
+const statEntrySchema = z
+  .object({
+    id: z.string().uuid(),
+    prospect_id: z.string().uuid(),
+    game_date: z.string(),
+    points: z.number().nullable(),
+    rebounds: z.number().nullable(),
+    assists: z.number().nullable(),
+    fg_made: z.number().nullable(),
+    fg_attempted: z.number().nullable(),
+    minutes: z.number().nullable(),
+    created_at: z.string(),
+    efficiency: z.number(),
+    fg_percentage: z.number(),
+  })
+  .openapi('StatEntry');
+
+const createStatEntrySchema = z
+  .object({
+    gameDate: z.string().optional(),
+    points: z.number().min(0).optional(),
+    rebounds: z.number().min(0).optional(),
+    assists: z.number().min(0).optional(),
+    fgMade: z.number().min(0).optional(),
+    fgAttempted: z.number().min(0).optional(),
+  })
+  .openapi('CreateStatEntry');
+
 registry.registerPath({
   method: 'get',
   path: '/prospects',
@@ -226,6 +267,40 @@ registry.registerPath({
   responses: {
     201: { description: 'Created evaluation', content: { 'application/json': { schema: z.object({ evaluation: evaluationSchema }) } } },
     400: { description: 'rating must be 1-10' },
+    401: { description: 'Not authenticated' },
+    404: { description: 'Prospect not found' },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/prospects/{id}/stats',
+  tags: ['prospects'],
+  summary: 'List box-score stat entries for a prospect, with computed efficiency metrics',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema },
+  responses: {
+    200: {
+      description: 'Stat entries',
+      content: {
+        'application/json': {
+          schema: z.object({ statEntries: z.array(statEntrySchema), averageEfficiency: z.number() }),
+        },
+      },
+    },
+    401: { description: 'Not authenticated' },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/prospects/{id}/stats',
+  tags: ['prospects'],
+  summary: 'Log a box-score stat entry for a prospect',
+  security: [{ bearerAuth: [] }],
+  request: { params: idParamSchema, body: { content: { 'application/json': { schema: createStatEntrySchema } } } },
+  responses: {
+    201: { description: 'Created stat entry', content: { 'application/json': { schema: z.object({ statEntry: statEntrySchema }) } } },
     401: { description: 'Not authenticated' },
     404: { description: 'Prospect not found' },
   },
@@ -512,6 +587,74 @@ router.post(
     } catch (err) {
       console.error('create evaluation error:', errorMessage(err));
       return res.status(500).json({ error: 'Failed to create evaluation' });
+    }
+  }
+);
+
+// GET /prospects/:id/stats — box-score entries plus computed efficiency metrics
+router.get('/:id/stats', requireAuth, validate({ params: idParamSchema }), async (req, res) => {
+  try {
+    const result = await query<StatEntryRow>(
+      `SELECT * FROM stat_entries WHERE prospect_id = $1 ORDER BY game_date ASC, created_at ASC`,
+      [req.params.id]
+    );
+    const statEntries = result.rows.map((row) => ({
+      ...row,
+      efficiency: efficiency(toBoxScoreStat(row)),
+      fg_percentage: fgPercentage(toBoxScoreStat(row)),
+    }));
+    return res.json({ statEntries, averageEfficiency: averageEfficiency(result.rows.map(toBoxScoreStat)) });
+  } catch (err) {
+    console.error('list stat entries error:', errorMessage(err));
+    return res.status(500).json({ error: 'Failed to load stat entries' });
+  }
+});
+
+// POST /prospects/:id/stats — all authenticated users can log a box score
+router.post(
+  '/:id/stats',
+  requireAuth,
+  validate({ params: idParamSchema, body: createStatEntrySchema }),
+  async (req, res) => {
+    const { gameDate, points, rebounds, assists, fgMade, fgAttempted } =
+      req.body as z.infer<typeof createStatEntrySchema>;
+
+    try {
+      const prospectCheck = await query('SELECT id FROM prospects WHERE id = $1', [req.params.id]);
+      if (prospectCheck.rows.length === 0) return res.status(404).json({ error: 'Prospect not found' });
+
+      const result = await query<StatEntryRow>(
+        `INSERT INTO stat_entries (prospect_id, game_date, points, rebounds, assists, fg_made, fg_attempted)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [
+          req.params.id,
+          gameDate || new Date().toISOString().slice(0, 10),
+          points ?? 0,
+          rebounds ?? 0,
+          assists ?? 0,
+          fgMade ?? 0,
+          fgAttempted ?? 0,
+        ]
+      );
+      const row = result.rows[0];
+      const statEntry = {
+        ...row,
+        efficiency: efficiency(toBoxScoreStat(row)),
+        fg_percentage: fgPercentage(toBoxScoreStat(row)),
+      };
+
+      await recordAudit({
+        actorId: req.user!.id,
+        entityType: 'stat_entry',
+        entityId: statEntry.id,
+        action: 'create',
+      });
+
+      return res.status(201).json({ statEntry });
+    } catch (err) {
+      console.error('create stat entry error:', errorMessage(err));
+      return res.status(500).json({ error: 'Failed to create stat entry' });
     }
   }
 );

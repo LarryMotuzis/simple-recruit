@@ -75,6 +75,10 @@ export const api = {
   createEvaluation: (prospectId, payload) =>
     request(`/prospects/${prospectId}/evaluations`, { method: 'POST', body: payload }),
 
+  listStatEntries: (prospectId) => request(`/prospects/${prospectId}/stats`),
+  createStatEntry: (prospectId, payload) =>
+    request(`/prospects/${prospectId}/stats`, { method: 'POST', body: payload }),
+
   getTeamSettings: () => request('/team-settings'),
   updateTeamSettings: (payload) => request('/team-settings', { method: 'PATCH', body: payload }),
 
