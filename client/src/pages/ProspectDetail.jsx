@@ -39,15 +39,22 @@ export default function ProspectDetail() {
   const [evaluations, setEvaluations] = useState([]);
   const [statEntries, setStatEntries] = useState([]);
   const [averageEfficiency, setAverageEfficiency] = useState(0);
+  const [statsError, setStatsError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const canEval = !!user;
   const canDelete = user?.role === 'admin' || user?.role === 'head_coach';
 
+  // Isolated from the main prospect load — a box-score hiccup shouldn't take down the whole page.
   const loadStats = async () => {
-    const { statEntries, averageEfficiency } = await api.listStatEntries(id);
-    setStatEntries(statEntries);
-    setAverageEfficiency(averageEfficiency);
+    try {
+      const { statEntries, averageEfficiency } = await api.listStatEntries(id);
+      setStatEntries(statEntries);
+      setAverageEfficiency(averageEfficiency);
+      setStatsError('');
+    } catch (err) {
+      setStatsError(err.message || 'Failed to load box scores');
+    }
   };
 
   useEffect(() => {
@@ -61,7 +68,6 @@ export default function ProspectDetail() {
         ]);
         setProspect(prospect);
         setEvaluations(evaluations);
-        await loadStats();
       } catch (err) {
         setError(err.message || 'Failed to load prospect');
       } finally {
@@ -69,16 +75,13 @@ export default function ProspectDetail() {
       }
     }
     load();
+    loadStats();
   }, [id]);
 
   const handleEvalCreated = (newEval) => setEvaluations((prev) => [...prev, newEval]);
 
-  const handleStatCreated = async () => {
-    try {
-      await loadStats();
-    } catch (err) {
-      setError(err.message || 'Failed to refresh box scores');
-    }
+  const handleStatCreated = () => {
+    loadStats();
   };
 
   const handleRemove = async () => {
@@ -185,7 +188,11 @@ export default function ProspectDetail() {
           )}
         </div>
 
-        {statEntries.length === 0 ? (
+        {statsError ? (
+          <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {statsError}
+          </p>
+        ) : statEntries.length === 0 ? (
           <p className="text-slate-400 text-sm">No box scores logged yet.</p>
         ) : (
           <div className="space-y-4">
@@ -214,7 +221,7 @@ export default function ProspectDetail() {
       {canEval && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
           <h2 className="text-sm font-semibold text-slate-700 mb-4">Log box score</h2>
-          <BoxScoreForm prospectId={id} onCreated={handleStatCreated} onError={setError} />
+          <BoxScoreForm prospectId={id} onCreated={handleStatCreated} onError={setStatsError} />
         </div>
       )}
 
