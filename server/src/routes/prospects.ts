@@ -58,6 +58,7 @@ const prospectSchema = z
     hs_coach_name: z.string().nullable(),
     hs_coach_phone: z.string().nullable(),
     hs_coach_email: z.string().nullable(),
+    priority: z.number().int().min(1).max(5).nullable(),
   })
   .openapi('Prospect');
 
@@ -84,6 +85,7 @@ const prospectQuerySchema = z.object({
   heightMin: z.coerce.number().optional(),
   heightMax: z.coerce.number().optional(),
   prospectType: prospectTypeSchema.optional(),
+  priority: z.coerce.number().int().min(1).max(5).optional(),
 });
 
 const createProspectSchema = z
@@ -110,6 +112,7 @@ const createProspectSchema = z
     hsCoachName: z.string().optional(),
     hsCoachPhone: z.string().optional(),
     hsCoachEmail: z.string().optional(),
+    priority: z.number().int().min(1).max(5).optional(),
   })
   .openapi('CreateProspect');
 
@@ -137,6 +140,7 @@ const patchProspectSchema = z
     hsCoachName: z.string().nullable().optional(),
     hsCoachPhone: z.string().nullable().optional(),
     hsCoachEmail: z.string().nullable().optional(),
+    priority: z.number().int().min(1).max(5).nullable().optional(),
   })
   .openapi('UpdateProspect');
 
@@ -335,7 +339,7 @@ registry.registerPath({
 
 // GET /prospects  — list with search + filters
 router.get('/', requireAuth, validate({ query: prospectQuerySchema }), async (req, res) => {
-  const { search, position, gradYear, stage, region, heightMin, heightMax, prospectType } =
+  const { search, position, gradYear, stage, region, heightMin, heightMax, prospectType, priority } =
     req.query as unknown as z.infer<typeof prospectQuerySchema>;
   const clauses: string[] = ['is_archived = FALSE'];
   const params: unknown[] = [];
@@ -372,8 +376,12 @@ router.get('/', requireAuth, validate({ query: prospectQuerySchema }), async (re
     params.push(prospectType);
     clauses.push(`prospect_type = $${params.length}`);
   }
+  if (priority) {
+    params.push(priority);
+    clauses.push(`priority = $${params.length}`);
+  }
 
-  const sql = `SELECT * FROM prospects WHERE ${clauses.join(' AND ')} ORDER BY stage, stage_order`;
+  const sql = `SELECT * FROM prospects WHERE ${clauses.join(' AND ')} ORDER BY stage, priority DESC NULLS LAST, stage_order`;
   try {
     const result = await query(sql, params);
     return res.json({ prospects: result.rows });
@@ -403,6 +411,7 @@ router.post('/', requireAuth, validate({ body: createProspectSchema }), async (r
     parentName, parentPhone, parentEmail,
     aauCoachName, aauCoachPhone, aauCoachEmail,
     hsCoachName, hsCoachPhone, hsCoachEmail,
+    priority,
   } = req.body as z.infer<typeof createProspectSchema>;
 
   const safeType = prospectType ?? 'high_school';
@@ -415,9 +424,9 @@ router.post('/', requireAuth, validate({ body: createProspectSchema }), async (r
          parent_name, parent_phone, parent_email,
          aau_coach_name, aau_coach_phone, aau_coach_email,
          hs_coach_name, hs_coach_phone, hs_coach_email,
-         created_by
+         priority, created_by
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
        RETURNING *`,
       [
         fullName, position ?? null, secondaryPosition ?? null, gradYear ?? null, heightInches ?? null, weightLbs ?? null, region ?? null, currentSchool ?? null,
@@ -425,6 +434,7 @@ router.post('/', requireAuth, validate({ body: createProspectSchema }), async (r
         parentName ?? null, parentPhone ?? null, parentEmail ?? null,
         aauCoachName ?? null, aauCoachPhone ?? null, aauCoachEmail ?? null,
         hsCoachName ?? null, hsCoachPhone ?? null, hsCoachEmail ?? null,
+        priority ?? null,
         req.user!.id,
       ]
     );
@@ -468,6 +478,7 @@ router.patch(
       hsCoachName: 'hs_coach_name',
       hsCoachPhone: 'hs_coach_phone',
       hsCoachEmail: 'hs_coach_email',
+      priority: 'priority',
     };
 
     const body = req.body as z.infer<typeof patchProspectSchema> & Record<string, unknown>;

@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { api } from '../api/client.js';
 import ProspectForm from '../components/ProspectForm.jsx';
 import EditProspectModal from '../components/EditProspectModal.jsx';
+import PriorityStars from '../components/PriorityStars.jsx';
 
 const STAGE_LABELS = { keeping_tabs: 'Keeping Tabs', evaluating: 'Evaluating', offered: 'Offered', committed: 'Committed' };
 
@@ -241,6 +242,11 @@ export default function Prospects() {
                   <p className="text-xs text-slate-400 mt-0.5 truncate">
                     {[p.secondary_position ? `${p.position}/${p.secondary_position}` : p.position, formatHeight(p.height_inches), p.current_school].filter(Boolean).join(' · ') || '—'}
                   </p>
+                  {p.priority && (
+                    <div className="mt-1">
+                      <PriorityStars value={p.priority} />
+                    </div>
+                  )}
                 </div>
                 {/* Chevron */}
                 <svg className="w-4 h-4 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -256,6 +262,7 @@ export default function Prospects() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Name</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Priority</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Pos</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                     {activeTab === 'high_school' ? 'Class' : 'Grad'}
@@ -274,6 +281,9 @@ export default function Prospects() {
                       <Link to={`/prospects/${p.id}`} className="text-blue-600 hover:text-blue-700 hover:underline">
                         {p.full_name}
                       </Link>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {p.priority ? <PriorityStars value={p.priority} /> : <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-4 py-3.5 text-slate-600">
                       {p.position ? (p.secondary_position ? `${p.position} / ${p.secondary_position}` : p.position) : '—'}

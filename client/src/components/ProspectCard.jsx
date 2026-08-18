@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import PriorityStars from './PriorityStars.jsx';
 
 function formatHeight(inches) {
   if (!inches) return null;
@@ -45,6 +46,12 @@ export default function ProspectCard({ prospect, draggable, onEdit }) {
           </button>
         )}
       </div>
+
+      {prospect.priority && (
+        <div className="mt-1">
+          <PriorityStars value={prospect.priority} />
+        </div>
+      )}
 
       {meta && (
         <p className="text-slate-500 text-xs mt-1">{meta}</p>
