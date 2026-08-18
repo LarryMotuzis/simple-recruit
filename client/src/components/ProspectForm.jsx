@@ -22,6 +22,15 @@ const blank = {
   currentSchool: '',
   contactPhone: '',
   contactEmail: '',
+  parentName: '',
+  parentPhone: '',
+  parentEmail: '',
+  aauCoachName: '',
+  aauCoachPhone: '',
+  aauCoachEmail: '',
+  hsCoachName: '',
+  hsCoachPhone: '',
+  hsCoachEmail: '',
   notes: '',
   inPortal: false,
 };
@@ -61,6 +70,15 @@ export default function ProspectForm({ onCreated, onError }) {
         currentSchool: form.currentSchool || undefined,
         contactPhone: form.contactPhone.trim() || undefined,
         contactEmail: form.contactEmail.trim() || undefined,
+        parentName: form.parentName.trim() || undefined,
+        parentPhone: form.parentPhone.trim() || undefined,
+        parentEmail: form.parentEmail.trim() || undefined,
+        aauCoachName: form.aauCoachName.trim() || undefined,
+        aauCoachPhone: form.aauCoachPhone.trim() || undefined,
+        aauCoachEmail: form.aauCoachEmail.trim() || undefined,
+        hsCoachName: form.hsCoachName.trim() || undefined,
+        hsCoachPhone: form.hsCoachPhone.trim() || undefined,
+        hsCoachEmail: form.hsCoachEmail.trim() || undefined,
         notes: form.notes.trim() || undefined,
         inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
@@ -168,6 +186,61 @@ export default function ProspectForm({ onCreated, onError }) {
           <div>
             <label className={labelClass}>Email</label>
             <input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="player@email.com" className={inputClass} />
+          </div>
+        </div>
+
+        {/* Additional contacts */}
+        <div className="mt-5 pt-5 border-t border-slate-100">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Parent / Guardian</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className={labelClass}>Name</label>
+              <input value={form.parentName} onChange={set('parentName')} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Phone</label>
+              <input type="tel" value={form.parentPhone} onChange={set('parentPhone')} placeholder="(555) 000-0000" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Email</label>
+              <input type="email" value={form.parentEmail} onChange={set('parentEmail')} placeholder="parent@email.com" className={inputClass} />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 pt-5 border-t border-slate-100">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">AAU Coach</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className={labelClass}>Name</label>
+              <input value={form.aauCoachName} onChange={set('aauCoachName')} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Phone</label>
+              <input type="tel" value={form.aauCoachPhone} onChange={set('aauCoachPhone')} placeholder="(555) 000-0000" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Email</label>
+              <input type="email" value={form.aauCoachEmail} onChange={set('aauCoachEmail')} placeholder="coach@email.com" className={inputClass} />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 pt-5 border-t border-slate-100">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">HS Coach</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className={labelClass}>Name</label>
+              <input value={form.hsCoachName} onChange={set('hsCoachName')} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Phone</label>
+              <input type="tel" value={form.hsCoachPhone} onChange={set('hsCoachPhone')} placeholder="(555) 000-0000" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Email</label>
+              <input type="email" value={form.hsCoachEmail} onChange={set('hsCoachEmail')} placeholder="coach@email.com" className={inputClass} />
+            </div>
           </div>
         </div>
 
