@@ -49,6 +49,15 @@ const prospectSchema = z
     prospect_type: prospectTypeSchema,
     contact_phone: z.string().nullable(),
     contact_email: z.string().nullable(),
+    parent_name: z.string().nullable(),
+    parent_phone: z.string().nullable(),
+    parent_email: z.string().nullable(),
+    aau_coach_name: z.string().nullable(),
+    aau_coach_phone: z.string().nullable(),
+    aau_coach_email: z.string().nullable(),
+    hs_coach_name: z.string().nullable(),
+    hs_coach_phone: z.string().nullable(),
+    hs_coach_email: z.string().nullable(),
   })
   .openapi('Prospect');
 
@@ -92,6 +101,15 @@ const createProspectSchema = z
     prospectType: prospectTypeSchema.optional(),
     contactPhone: z.string().optional(),
     contactEmail: z.string().optional(),
+    parentName: z.string().optional(),
+    parentPhone: z.string().optional(),
+    parentEmail: z.string().optional(),
+    aauCoachName: z.string().optional(),
+    aauCoachPhone: z.string().optional(),
+    aauCoachEmail: z.string().optional(),
+    hsCoachName: z.string().optional(),
+    hsCoachPhone: z.string().optional(),
+    hsCoachEmail: z.string().optional(),
   })
   .openapi('CreateProspect');
 
@@ -110,6 +128,15 @@ const patchProspectSchema = z
     prospectType: prospectTypeSchema.optional(),
     contactPhone: z.string().nullable().optional(),
     contactEmail: z.string().nullable().optional(),
+    parentName: z.string().nullable().optional(),
+    parentPhone: z.string().nullable().optional(),
+    parentEmail: z.string().nullable().optional(),
+    aauCoachName: z.string().nullable().optional(),
+    aauCoachPhone: z.string().nullable().optional(),
+    aauCoachEmail: z.string().nullable().optional(),
+    hsCoachName: z.string().nullable().optional(),
+    hsCoachPhone: z.string().nullable().optional(),
+    hsCoachEmail: z.string().nullable().optional(),
   })
   .openapi('UpdateProspect');
 
@@ -373,16 +400,33 @@ router.post('/', requireAuth, validate({ body: createProspectSchema }), async (r
   const {
     fullName, position, secondaryPosition, gradYear, heightInches, weightLbs, region,
     currentSchool, inPortal, notes, prospectType, contactPhone, contactEmail,
+    parentName, parentPhone, parentEmail,
+    aauCoachName, aauCoachPhone, aauCoachEmail,
+    hsCoachName, hsCoachPhone, hsCoachEmail,
   } = req.body as z.infer<typeof createProspectSchema>;
 
   const safeType = prospectType ?? 'high_school';
 
   try {
     const result = await query(
-      `INSERT INTO prospects (full_name, position, secondary_position, grad_year, height_inches, weight_lbs, region, current_school, in_portal, notes, prospect_type, contact_phone, contact_email, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      `INSERT INTO prospects (
+         full_name, position, secondary_position, grad_year, height_inches, weight_lbs, region, current_school,
+         in_portal, notes, prospect_type, contact_phone, contact_email,
+         parent_name, parent_phone, parent_email,
+         aau_coach_name, aau_coach_phone, aau_coach_email,
+         hs_coach_name, hs_coach_phone, hs_coach_email,
+         created_by
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
        RETURNING *`,
-      [fullName, position ?? null, secondaryPosition ?? null, gradYear ?? null, heightInches ?? null, weightLbs ?? null, region ?? null, currentSchool ?? null, inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null, req.user!.id]
+      [
+        fullName, position ?? null, secondaryPosition ?? null, gradYear ?? null, heightInches ?? null, weightLbs ?? null, region ?? null, currentSchool ?? null,
+        inPortal ?? false, notes ?? null, safeType, contactPhone ?? null, contactEmail ?? null,
+        parentName ?? null, parentPhone ?? null, parentEmail ?? null,
+        aauCoachName ?? null, aauCoachPhone ?? null, aauCoachEmail ?? null,
+        hsCoachName ?? null, hsCoachPhone ?? null, hsCoachEmail ?? null,
+        req.user!.id,
+      ]
     );
     const prospect = result.rows[0];
     recordAudit({ actorId: req.user!.id, entityType: 'prospect', entityId: prospect.id, action: 'create' })
@@ -415,6 +459,15 @@ router.patch(
       prospectType: 'prospect_type',
       contactPhone: 'contact_phone',
       contactEmail: 'contact_email',
+      parentName: 'parent_name',
+      parentPhone: 'parent_phone',
+      parentEmail: 'parent_email',
+      aauCoachName: 'aau_coach_name',
+      aauCoachPhone: 'aau_coach_phone',
+      aauCoachEmail: 'aau_coach_email',
+      hsCoachName: 'hs_coach_name',
+      hsCoachPhone: 'hs_coach_phone',
+      hsCoachEmail: 'hs_coach_email',
     };
 
     const body = req.body as z.infer<typeof patchProspectSchema> & Record<string, unknown>;

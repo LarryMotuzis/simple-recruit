@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Phone, Mail } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { api } from '../api/client.js';
-import { ratingTrend } from '../lib/metrics.js';
-import RatingChart from '../components/RatingChart.jsx';
 import EvaluationForm from '../components/EvaluationForm.jsx';
-import BoxScoreForm from '../components/BoxScoreForm.jsx';
 
 const STAGE_BADGE = {
   keeping_tabs: 'bg-slate-100 text-slate-600',
@@ -19,6 +16,30 @@ const STAGE_LABELS = { keeping_tabs: 'Keeping Tabs', evaluating: 'Evaluating', o
 function formatHeight(inches) {
   if (!inches) return null;
   return `${Math.floor(inches / 12)}'${inches % 12}"`;
+}
+
+function ContactGroup({ label, name, phone, email }) {
+  if (!name && !phone && !email) return null;
+  return (
+    <div>
+      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</p>
+      {name && <p className="text-sm font-medium text-slate-800 mb-1">{name}</p>}
+      <div className="flex flex-col gap-1">
+        {phone && (
+          <a href={`tel:${phone}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600 transition-colors">
+            <Phone className="w-3.5 h-3.5" />
+            {phone}
+          </a>
+        )}
+        {email && (
+          <a href={`mailto:${email}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600 transition-colors">
+            <Mail className="w-3.5 h-3.5" />
+            {email}
+          </a>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function formatDate(dateStr) {
@@ -37,18 +58,10 @@ export default function ProspectDetail() {
 
   const [prospect, setProspect] = useState(null);
   const [evaluations, setEvaluations] = useState([]);
-  const [statEntries, setStatEntries] = useState([]);
-  const [averageEfficiency, setAverageEfficiency] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const canEval = !!user;
   const canDelete = user?.role === 'admin' || user?.role === 'head_coach';
-
-  const loadStats = async () => {
-    const { statEntries, averageEfficiency } = await api.listStatEntries(id);
-    setStatEntries(statEntries);
-    setAverageEfficiency(averageEfficiency);
-  };
 
   useEffect(() => {
     async function load() {
@@ -61,7 +74,6 @@ export default function ProspectDetail() {
         ]);
         setProspect(prospect);
         setEvaluations(evaluations);
-        await loadStats();
       } catch (err) {
         setError(err.message || 'Failed to load prospect');
       } finally {
@@ -72,14 +84,6 @@ export default function ProspectDetail() {
   }, [id]);
 
   const handleEvalCreated = (newEval) => setEvaluations((prev) => [...prev, newEval]);
-
-  const handleStatCreated = async () => {
-    try {
-      await loadStats();
-    } catch (err) {
-      setError(err.message || 'Failed to refresh box scores');
-    }
-  };
 
   const handleRemove = async () => {
     if (!confirm(`Remove ${prospect.full_name} from prospects? This cannot be undone.`)) return;
@@ -109,7 +113,6 @@ export default function ProspectDetail() {
   }
   if (!prospect) return null;
 
-  const trendData = ratingTrend(evaluations);
   const latestRating = evaluations.length ? evaluations[evaluations.length - 1].rating : null;
 
   const positionDisplay = prospect.secondary_position
@@ -168,55 +171,30 @@ export default function ProspectDetail() {
         </div>
       )}
 
-      {/* Rating chart card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
-        <h2 className="text-sm font-semibold text-slate-700 mb-4">Rating trend</h2>
-        <RatingChart data={trendData} />
-      </div>
-
-      {/* Box score card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h2 className="text-sm font-semibold text-slate-700">Box score</h2>
-          {statEntries.length > 0 && (
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-              Avg efficiency: {averageEfficiency}
-            </span>
-          )}
-        </div>
-
-        {statEntries.length === 0 ? (
-          <p className="text-slate-400 text-sm">No box scores logged yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {[...statEntries].reverse().map((s) => (
-              <div key={s.id} className="border-l-2 border-blue-200 pl-4">
-                <div className="flex items-baseline gap-3 flex-wrap mb-1">
-                  <span className="font-bold text-slate-900 text-base tabular-nums">
-                    {s.efficiency}
-                    <span className="text-slate-400 font-normal text-sm"> EFF</span>
-                  </span>
-                  <span className="text-slate-500 text-xs">{formatDate(s.game_date)}</span>
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {s.fg_percentage}% FG
-                  </span>
-                </div>
-                <p className="text-slate-600 text-sm">
-                  {s.points ?? 0} PTS · {s.rebounds ?? 0} REB · {s.assists ?? 0} AST · {s.fg_made ?? 0}/{s.fg_attempted ?? 0} FG
-                </p>
+      {/* Contact card */}
+      {(() => {
+        const groups = [
+          { label: 'Player', phone: prospect.contact_phone, email: prospect.contact_email },
+          { label: 'Parent / Guardian', name: prospect.parent_name, phone: prospect.parent_phone, email: prospect.parent_email },
+          { label: 'AAU Coach', name: prospect.aau_coach_name, phone: prospect.aau_coach_phone, email: prospect.aau_coach_email },
+          { label: 'HS Coach', name: prospect.hs_coach_name, phone: prospect.hs_coach_phone, email: prospect.hs_coach_email },
+        ];
+        const hasAny = groups.some((g) => g.name || g.phone || g.email);
+        return (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
+            <h2 className="text-sm font-semibold text-slate-700 mb-4">Contact</h2>
+            {hasAny ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {groups.map((g) => (
+                  <ContactGroup key={g.label} {...g} />
+                ))}
               </div>
-            ))}
+            ) : (
+              <p className="text-slate-400 text-sm">No contact info yet.</p>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Log box score */}
-      {canEval && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Log box score</h2>
-          <BoxScoreForm prospectId={id} onCreated={handleStatCreated} onError={setError} />
-        </div>
-      )}
+        );
+      })()}
 
       {/* Log evaluation */}
       {canEval && (

@@ -29,6 +29,15 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
     currentSchool: prospect.current_school || '',
     contactPhone: prospect.contact_phone || '',
     contactEmail: prospect.contact_email || '',
+    parentName: prospect.parent_name || '',
+    parentPhone: prospect.parent_phone || '',
+    parentEmail: prospect.parent_email || '',
+    aauCoachName: prospect.aau_coach_name || '',
+    aauCoachPhone: prospect.aau_coach_phone || '',
+    aauCoachEmail: prospect.aau_coach_email || '',
+    hsCoachName: prospect.hs_coach_name || '',
+    hsCoachPhone: prospect.hs_coach_phone || '',
+    hsCoachEmail: prospect.hs_coach_email || '',
     notes: prospect.notes || '',
     inPortal: prospect.in_portal || false,
   });
@@ -61,6 +70,15 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
         currentSchool: form.currentSchool || null,
         contactPhone: form.contactPhone.trim() || null,
         contactEmail: form.contactEmail.trim() || null,
+        parentName: form.parentName.trim() || null,
+        parentPhone: form.parentPhone.trim() || null,
+        parentEmail: form.parentEmail.trim() || null,
+        aauCoachName: form.aauCoachName.trim() || null,
+        aauCoachPhone: form.aauCoachPhone.trim() || null,
+        aauCoachEmail: form.aauCoachEmail.trim() || null,
+        hsCoachName: form.hsCoachName.trim() || null,
+        hsCoachPhone: form.hsCoachPhone.trim() || null,
+        hsCoachEmail: form.hsCoachEmail.trim() || null,
         notes: form.notes.trim() || null,
         inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
@@ -176,6 +194,61 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
             <div>
               <label className={labelClass}>Email</label>
               <input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="player@email.com" className={inputClass} />
+            </div>
+          </div>
+
+          {/* Additional contacts */}
+          <div className="mt-5 pt-5 border-t border-slate-100">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Parent / Guardian</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className={labelClass}>Name</label>
+                <input value={form.parentName} onChange={set('parentName')} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Phone</label>
+                <input type="tel" value={form.parentPhone} onChange={set('parentPhone')} placeholder="(555) 000-0000" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input type="email" value={form.parentEmail} onChange={set('parentEmail')} placeholder="parent@email.com" className={inputClass} />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-5 border-t border-slate-100">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">AAU Coach</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className={labelClass}>Name</label>
+                <input value={form.aauCoachName} onChange={set('aauCoachName')} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Phone</label>
+                <input type="tel" value={form.aauCoachPhone} onChange={set('aauCoachPhone')} placeholder="(555) 000-0000" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input type="email" value={form.aauCoachEmail} onChange={set('aauCoachEmail')} placeholder="coach@email.com" className={inputClass} />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-5 border-t border-slate-100">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">HS Coach</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className={labelClass}>Name</label>
+                <input value={form.hsCoachName} onChange={set('hsCoachName')} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Phone</label>
+                <input type="tel" value={form.hsCoachPhone} onChange={set('hsCoachPhone')} placeholder="(555) 000-0000" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input type="email" value={form.hsCoachEmail} onChange={set('hsCoachEmail')} placeholder="coach@email.com" className={inputClass} />
+              </div>
             </div>
           </div>
 
