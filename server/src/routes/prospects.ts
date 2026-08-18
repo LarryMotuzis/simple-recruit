@@ -98,18 +98,18 @@ const createProspectSchema = z
 const patchProspectSchema = z
   .object({
     fullName: z.string().min(1).optional(),
-    position: z.string().optional(),
-    secondaryPosition: z.string().optional(),
-    gradYear: z.number().optional(),
-    heightInches: z.number().optional(),
-    weightLbs: z.number().optional(),
-    region: z.string().optional(),
-    currentSchool: z.string().optional(),
+    position: z.string().nullable().optional(),
+    secondaryPosition: z.string().nullable().optional(),
+    gradYear: z.number().nullable().optional(),
+    heightInches: z.number().nullable().optional(),
+    weightLbs: z.number().nullable().optional(),
+    region: z.string().nullable().optional(),
+    currentSchool: z.string().nullable().optional(),
     inPortal: z.boolean().optional(),
-    notes: z.string().optional(),
+    notes: z.string().nullable().optional(),
     prospectType: prospectTypeSchema.optional(),
-    contactPhone: z.string().optional(),
-    contactEmail: z.string().optional(),
+    contactPhone: z.string().nullable().optional(),
+    contactEmail: z.string().nullable().optional(),
   })
   .openapi('UpdateProspect');
 
