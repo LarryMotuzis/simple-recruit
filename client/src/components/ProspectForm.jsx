@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api/client.js';
+import PriorityStars from './PriorityStars.jsx';
 
 const POSITIONS = ['PG', 'SG', 'Combo Guard', 'Wing', 'Forward', 'C'];
 
@@ -31,6 +32,7 @@ const blank = {
   hsCoachName: '',
   hsCoachPhone: '',
   hsCoachEmail: '',
+  priority: null,
   notes: '',
   inPortal: false,
 };
@@ -79,6 +81,7 @@ export default function ProspectForm({ onCreated, onError }) {
         hsCoachName: form.hsCoachName.trim() || undefined,
         hsCoachPhone: form.hsCoachPhone.trim() || undefined,
         hsCoachEmail: form.hsCoachEmail.trim() || undefined,
+        priority: form.priority || undefined,
         notes: form.notes.trim() || undefined,
         inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
@@ -121,6 +124,16 @@ export default function ProspectForm({ onCreated, onError }) {
               onChange={set('fullName')}
               placeholder="Full name"
               className={inputClass}
+            />
+          </div>
+
+          {/* Priority */}
+          <div className="col-span-2">
+            <label className={labelClass}>Priority</label>
+            <PriorityStars
+              size="lg"
+              value={form.priority}
+              onChange={(priority) => setForm((f) => ({ ...f, priority }))}
             />
           </div>
 

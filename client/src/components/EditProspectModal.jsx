@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { api } from '../api/client.js';
+import PriorityStars from './PriorityStars.jsx';
 
 const POSITIONS = ['PG', 'SG', 'Combo Guard', 'Wing', 'Forward', 'C'];
 
@@ -38,6 +39,7 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
     hsCoachName: prospect.hs_coach_name || '',
     hsCoachPhone: prospect.hs_coach_phone || '',
     hsCoachEmail: prospect.hs_coach_email || '',
+    priority: prospect.priority || null,
     notes: prospect.notes || '',
     inPortal: prospect.in_portal || false,
   });
@@ -79,6 +81,7 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
         hsCoachName: form.hsCoachName.trim() || null,
         hsCoachPhone: form.hsCoachPhone.trim() || null,
         hsCoachEmail: form.hsCoachEmail.trim() || null,
+        priority: form.priority || null,
         notes: form.notes.trim() || null,
         inPortal: form.prospectType === 'transfer' ? form.inPortal : false,
       });
@@ -130,6 +133,16 @@ export default function EditProspectModal({ prospect, onSaved, onClose }) {
             <div className="col-span-2">
               <label className={labelClass}>Name *</label>
               <input value={form.fullName} onChange={set('fullName')} className={inputClass} />
+            </div>
+
+            {/* Priority */}
+            <div className="col-span-2">
+              <label className={labelClass}>Priority</label>
+              <PriorityStars
+                size="lg"
+                value={form.priority}
+                onChange={(priority) => setForm((f) => ({ ...f, priority }))}
+              />
             </div>
 
             {/* Primary position */}

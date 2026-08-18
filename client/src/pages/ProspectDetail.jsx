@@ -4,6 +4,7 @@ import { ArrowLeft, Trash2, Phone, Mail } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { api } from '../api/client.js';
 import EvaluationForm from '../components/EvaluationForm.jsx';
+import PriorityStars from '../components/PriorityStars.jsx';
 
 const STAGE_BADGE = {
   keeping_tabs: 'bg-slate-100 text-slate-600',
@@ -143,6 +144,7 @@ export default function ProspectDetail() {
         <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-semibold text-slate-900">{prospect.full_name}</h1>
+            <PriorityStars value={prospect.priority} size="md" />
             <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STAGE_BADGE[prospect.stage]}`}>
               {STAGE_LABELS[prospect.stage]}
             </span>
